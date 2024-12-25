@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Manager.API.ViewModels;
 using Manager.API.ViewModes;
 using Manager.Domain.Entities;
 using Manager.Services.DTO;

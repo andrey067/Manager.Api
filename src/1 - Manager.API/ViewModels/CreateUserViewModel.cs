@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Manager.API.ViewModes{
+namespace Manager.API.ViewModels{
     public class CreateUserViewModel{
         
         [Required(ErrorMessage = "O nome não pode ser vazio.")]

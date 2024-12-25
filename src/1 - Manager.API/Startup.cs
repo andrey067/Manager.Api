@@ -6,6 +6,7 @@ using EscNet.IoC.Hashers;
 using Isopoh.Cryptography.Argon2;
 using manager.API.Middlewares;
 using Manager.API.Token;
+using Manager.API.ViewModels;
 using Manager.API.ViewModes;
 using Manager.Core.Communication.Handlers;
 using Manager.Core.Communication.Mediator;
