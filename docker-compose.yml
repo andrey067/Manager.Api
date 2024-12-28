@@ -1,0 +1,8 @@
+services:
+  api:
+    image: ${DOCKER_REGISTRY-}api
+    build:
+      context: .
+      dockerfile: src/Api/Dockerfile
+    environment:
+      ConnectionStrings__SqlServer: "server=sqlserver,1433;database=rest_with_asp_net_udemy;user id=sa;password=Numsey#2021;TrustServerCertificate=True;Encrypt=False;

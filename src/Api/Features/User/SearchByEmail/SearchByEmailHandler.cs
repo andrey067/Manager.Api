@@ -1,5 +1,5 @@
-﻿using Api.Database;
-using Api.Features.User.GetAll;
+﻿using Api.Common.Responses;
+using Api.Database;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

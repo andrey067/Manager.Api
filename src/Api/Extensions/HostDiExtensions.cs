@@ -15,10 +15,10 @@ public static class HostDiExtensions
     public static IServiceCollection AddWebHostInfrastructure(this IServiceCollection services,
         IConfiguration configuration)
     {
-        // services.AddScoped<SeedService>();
+        services.AddScoped<SeedService>();
 
-        // services
-        //     .AddEfCore(configuration);
+        services
+            .AddEfCore(configuration);
 
         services
             .AddEndpointsApiExplorer()
@@ -47,29 +47,38 @@ public static class HostDiExtensions
     }
 
     public static void AddHostLogging(this WebApplicationBuilder builder)
-{
-    // Configura o Serilog como o provedor de logging, lendo as configurações do arquivo de configuração do aplicativo
-    builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
-}
+    {
+        // Configura o Serilog como o provedor de logging, lendo as configurações do arquivo de configuração do aplicativo
+        builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
+    }
 
     private static IServiceCollection AddEfCore(this IServiceCollection services, IConfiguration configuration)
     {
         var postgresConnectionString = configuration.GetConnectionString("Postgres");
         var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
-    
+
         //Postgres
         // services.AddDbContext<ManagerContext>(x => x
         //     .EnableSensitiveDataLogging()
         //     .UseNpgsql(postgresConnectionString, npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__MyMigrationsHistory", "manager"))
         //     .UseSnakeCaseNamingConvention()
         // );
-        
+
+        //SQlServer
+        //services.AddDbContext<ManagerContext>(x => x
+        //    .EnableSensitiveDataLogging()
+        //    .UseSqlServer(sqlServerConnectionString,
+        //        sqlServerOptions =>
+        //            sqlServerOptions.MigrationsHistoryTable("__MyMigrationsHistory", "manager-vertical"))
+        //    .UseSnakeCaseNamingConvention()
+        //);
+
+
+        //InMemory
         services.AddDbContext<ManagerContext>(x => x
-            .EnableSensitiveDataLogging()
-            .UseSqlServer(sqlServerConnectionString ?? string.Empty, sqlServerOptions => sqlServerOptions.MigrationsHistoryTable("__MyMigrationsHistory", "manager"))
-            .UseSnakeCaseNamingConvention()
+            .UseInMemoryDatabase("manager-vertical")
         );
-    
+
         return services;
     }
 }

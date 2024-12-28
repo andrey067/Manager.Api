@@ -16,8 +16,7 @@ public class UpdateUserHandler(ILogger<UpdateUserHandler> logger, ManagerContext
     public async Task<ErrorOr<UpdateUserResponse>> Handle(UpdateUserCommand request,
         CancellationToken cancellationToken)
     {
-        var user = await context.Users.Include(user => user.Id)
-            .SingleOrDefaultAsync(u => u.Id.Value == request.Id, cancellationToken);
+        var user = await context.Users.SingleOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
 
         if (user is null)
         {
@@ -31,7 +30,7 @@ public class UpdateUserHandler(ILogger<UpdateUserHandler> logger, ManagerContext
 
         logger.LogInformation("Updated user: {@User}", user);
 
-        var response = new UpdateUserResponse(user.Id.Value, user.ToString()!, user.Email);
+        var response = new UpdateUserResponse(user.Id, user.Name.ToString(), user.Email);
         return response;
     }
 }

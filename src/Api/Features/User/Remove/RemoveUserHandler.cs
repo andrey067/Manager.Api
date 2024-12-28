@@ -12,7 +12,7 @@ public class RemoveUserHandler(ILogger<RemoveUserHandler> logger, ManagerContext
 {
     public async Task<ErrorOr<Unit>> Handle(RemoveUserQuery request, CancellationToken cancellationToken)
     {
-        var user = await context.Users.SingleOrDefaultAsync(x => x.Id.Value == request.Id, cancellationToken);
+        var user = await context.Users.SingleOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
         if (user is null)
         {
             logger.LogWarning("User with ID {UserId} not found", request.Id);

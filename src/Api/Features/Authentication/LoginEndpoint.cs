@@ -32,7 +32,7 @@ public class LoginEndpoint : BaseApi, IEndpoint
         var command = new LoginCommand(request.Login, request.Password);
         var response = await sender.Send(command, cancellationToken);
 
-        return response.Match<IResult>(
+        return response.Match(
             Results.Ok,
             Problem);
     }

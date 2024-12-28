@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using Api.Extensions;
+﻿using Api.Extensions;
 using Api.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

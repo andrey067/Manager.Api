@@ -31,6 +31,6 @@ public class CreateUserHandler(ILogger<CreateUserHandler> logger, ManagerContext
         await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Created user: {@User}", userToCreate);
-        return new CreateUserResponse(userToCreate.Id.Value, user!.Name.ToString(), userToCreate.Email);
+        return new CreateUserResponse(userToCreate.Id, userToCreate!.Name.ToString(), userToCreate.Email);
     }
 }
