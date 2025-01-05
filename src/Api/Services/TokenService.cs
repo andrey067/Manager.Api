@@ -21,7 +21,7 @@ public class TokenService(IOptions<JwtOptions> jwtOptions) : ITokenService
 
         if (_jwtOptions.Login is null)
             throw new ArgumentNullException(nameof(_jwtOptions.Login), "JwtOptions.Login is null");
-        
+
         var key = Encoding.ASCII.GetBytes(_jwtOptions.Key);
 
         var tokenDescriptor = new SecurityTokenDescriptor

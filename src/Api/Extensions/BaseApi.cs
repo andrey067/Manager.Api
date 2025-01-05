@@ -31,11 +31,9 @@ public abstract class BaseApi
         var modelStateDictionary = new ModelStateDictionary();
 
         foreach (var error in errors)
-        {
             modelStateDictionary.AddModelError(
                 error.Code,
                 error.Description);
-        }
 
         return Results.ValidationProblem(modelStateDictionary.ToDictionary(
             kvp => kvp.Key,

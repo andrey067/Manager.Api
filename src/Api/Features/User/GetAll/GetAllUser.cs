@@ -15,7 +15,7 @@ public class GetAllUser : BaseApi, IEndpoint
     private static async Task<IResult> Handler(ISender sender, CancellationToken cancellationToken)
     {
         var response = await sender.Send(new GetAllUserQuery(), cancellationToken);
-        
+
         return response.Match(
             Results.Ok,
             Problem);

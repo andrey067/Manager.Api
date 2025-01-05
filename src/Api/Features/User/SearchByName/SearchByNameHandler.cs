@@ -1,5 +1,5 @@
-﻿using Api.Database;
-using Api.Features.User.GetAll;
+﻿using Api.Common.Responses;
+using Api.Database;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +15,8 @@ internal class SearchByNameHandler(ILogger<SearchByNameHandler> logger, ManagerC
         CancellationToken cancellationToken)
     {
         var users = await context.Users
-            .Where(u => u.Name.Value.FirstName.Contains(request.Name) || u.Name.Value.FirstName.Contains(request.Name))
+            .Where(u => u.Name.FirstName.Contains(request.Name) || u.Name.FirstName.Contains(request.Name))
+            .Include(user => user.Name)
             .Include(user => user.Id)
             .ToListAsync(cancellationToken);
 

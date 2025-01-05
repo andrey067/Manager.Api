@@ -1,17 +1,16 @@
-﻿using System.Linq.Expressions;
-using Api.Database;
+﻿using Api.Database;
 using Api.Database.Entities;
-using Api.Features.User.Update;
+using Api.Features.User.Remove;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Api.Tests.Features.UserTests;
 
-public class UpdateUserHandlerTests : TestContainerBase
+public class RemoveUserHandlerTests : TestContainerBase
 {
     [Fact]
-    public async Task Handle_ReturnsUpdatedUserResponse_WhenUserExists()
+    public async Task Handle_RemovesUser_WhenUserExists()
     {
         var options = new DbContextOptionsBuilder<ManagerContext>()
             .UseSqlServer(MsSqlContainer.GetConnectionString())
@@ -20,20 +19,18 @@ public class UpdateUserHandlerTests : TestContainerBase
         await using var context = new ManagerContext(options);
         await context.Database.EnsureCreatedAsync();
 
-        var loggerMock = new Mock<ILogger<UpdateUserHandler>>();
+        var loggerMock = new Mock<ILogger<RemoveUserHandler>>();
         var user = User.Create("John", "Doe", "john.doe@example.com", "password123");
         await context.Users.AddAsync(user);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateUserHandler(loggerMock.Object, context);
-        var command = new UpdateUserCommand(user.Id, "Jane", "Doe", "jane.doe@example.com", "newpassword123");
+        var handler = new RemoveUserHandler(loggerMock.Object, context);
+        var query = new RemoveUserQuery(user.Id);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         Assert.False(result.IsError);
-        Assert.Equal(user.Id, result.Value.Id);
-        Assert.Equal("Jane Doe", result.Value.Name);
-        Assert.Equal("jane.doe@example.com", result.Value.Email);
+        Assert.Null(await context.Users.SingleOrDefaultAsync(x => x.Id == user.Id));
     }
 
     [Fact]
@@ -46,11 +43,11 @@ public class UpdateUserHandlerTests : TestContainerBase
         await using var context = new ManagerContext(options);
         await context.Database.EnsureCreatedAsync();
 
-        var loggerMock = new Mock<ILogger<UpdateUserHandler>>();
-        var handler = new UpdateUserHandler(loggerMock.Object, context);
-        var command = new UpdateUserCommand(1, "Jane", "Doe", "jane.doe@example.com", "newpassword123");
+        var loggerMock = new Mock<ILogger<RemoveUserHandler>>();
+        var handler = new RemoveUserHandler(loggerMock.Object, context);
+        var query = new RemoveUserQuery(1);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         Assert.True(result.IsError);
     }

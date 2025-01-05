@@ -8,11 +8,10 @@ public class UserTests
     public void Create_ReturnsUser_WithValidParameters()
     {
         var user = User.Create("John", "Doe", "john.doe@example.com", "password123");
-
-        var (fisrtName, lastName) = user.Name.Value;
+        
         Assert.NotNull(user);
-        Assert.Equal("John", fisrtName);
-        Assert.Equal("Doe", lastName);
+        Assert.Equal("John", user.Name.FirstName);
+        Assert.Equal("Doe", user.Name.LastName);
         Assert.Equal("john.doe@example.com", user.Email);
         Assert.Equal("password123", user.Password);
     }
@@ -34,10 +33,9 @@ public class UserTests
     {
         var user = User.Create("John", "Doe", "john.doe@example.com", "password123");
         user.Update("Jane", "Smith", "jane.smith@example.com", "newpassword123");
-
-        var (firstName, lastName) = user.Name.Value;
-        Assert.Equal("Jane", firstName);
-        Assert.Equal("Smith", lastName);
+        
+        Assert.Equal("Jane", user.Name.FirstName);
+        Assert.Equal("Smith", user.Name.LastName);
         Assert.Equal("jane.smith@example.com", user.Email);
         Assert.Equal("newpassword123", user.Password);
     }
