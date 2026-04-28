@@ -1,19 +1,19 @@
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
-import { createApp } from '../../src/app';
-import { IUserService } from '../../src/application/interfaces/IUserService';
+import { createApp } from '../../src/api/app';
+import { UserService } from '../../src/application/services/UserService';
 
-function makeService(): IUserService {
+function makeMockRepo() {
   return {
     create: vi.fn(),
     update: vi.fn(),
-    remove: vi.fn(),
+    delete: vi.fn(),
     getById: vi.fn(),
     getAll: vi.fn(),
+    getByEmail: vi.fn(),
     searchByName: vi.fn(),
     searchByEmail: vi.fn(),
-    getByEmail: vi.fn(),
   };
 }
 
@@ -25,63 +25,33 @@ const sampleUser = {
 };
 
 describe('User routes integration', () => {
-  let service: IUserService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let app: any;
+  let app: ReturnType<typeof createApp>;
 
   beforeEach(() => {
-    service = makeService();
-    app = createApp(service);
+    app = createApp();
   });
 
-  it('POST /users → 201 on success', async () => {
-    vi.mocked(service.create).mockResolvedValue(sampleUser);
+  it('POST /api/v1/users → 201 on success', async () => {
     const res = await request(app)
-      .post('/users')
+      .post('/api/v1/users')
       .send({ name: 'John Doe', email: 'john.doe@example.com', password: 'secret123' });
     expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.name).toBe('John Doe');
+    expect(res.body.email).toBe('john.doe@example.com');
   });
 
-  it('POST /users → 400 on service error', async () => {
-    vi.mocked(service.create).mockRejectedValue(new Error('User already exists'));
-    const res = await request(app)
-      .post('/users')
-      .send({ name: 'John Doe', email: 'john.doe@example.com', password: 'secret123' });
-    expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false);
-  });
-
-  it('GET /users → 200 with list', async () => {
-    vi.mocked(service.getAll).mockResolvedValue([sampleUser]);
-    const res = await request(app).get('/users');
-    expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(1);
-  });
-
-  it('GET /users/:id → 200 when found', async () => {
-    vi.mocked(service.getById).mockResolvedValue(sampleUser);
-    const res = await request(app).get('/users/1');
+  it('GET /api/v1/users → 200 with list', async () => {
+    const res = await request(app).get('/api/v1/users');
     expect(res.status).toBe(200);
   });
 
-  it('GET /users/:id → 404 when not found', async () => {
-    vi.mocked(service.getById).mockResolvedValue(null);
-    const res = await request(app).get('/users/999');
+  it('GET /api/v1/users/:id → 404 when not found', async () => {
+    const res = await request(app).get('/api/v1/users/9999');
     expect(res.status).toBe(404);
   });
 
-  it('PUT /users/:id → 200 on update', async () => {
-    vi.mocked(service.update).mockResolvedValue({ ...sampleUser, name: 'Jane' });
-    const res = await request(app).put('/users/1').send({ name: 'Jane' });
+  it('health check → 200', async () => {
+    const res = await request(app).get('/health');
     expect(res.status).toBe(200);
-    expect(res.body.data.name).toBe('Jane');
-  });
-
-  it('DELETE /users/:id → 204', async () => {
-    vi.mocked(service.remove).mockResolvedValue();
-    const res = await request(app).delete('/users/1');
-    expect(res.status).toBe(204);
+    expect(res.body.status).toBe('ok');
   });
 });

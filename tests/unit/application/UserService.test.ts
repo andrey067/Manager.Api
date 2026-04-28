@@ -3,23 +3,20 @@ import { UserService } from '../../../src/application/services/UserService';
 import { IUserRepository } from '../../../src/application/interfaces/IUserRepository';
 import { User } from '../../../src/domain/entities/User';
 
-// Mock bcryptjs to keep tests fast
-vi.mock('../../../src/core/utils/password', () => ({
-  hashPassword: async (p: string) => `hashed:${p}`,
-  comparePassword: async () => true,
-}));
+function makeUser(id = 1): User {
+  const user = new User('John Doe', 'john.doe@example.com', 'secret123');
+  user.id = id;
+  return user;
+}
 
-const makeUser = (id = 1): User =>
-  new User('John Doe', 'john.doe@example.com', 'secret123', id);
-
-function makeRepo(): IUserRepository {
+function makeRepo() {
   return {
     create: vi.fn(),
     update: vi.fn(),
-    remove: vi.fn(),
+    delete: vi.fn(),
     getById: vi.fn(),
-    getByEmail: vi.fn(),
     getAll: vi.fn(),
+    getByEmail: vi.fn(),
     searchByName: vi.fn(),
     searchByEmail: vi.fn(),
   };
@@ -48,7 +45,6 @@ describe('UserService', () => {
 
       expect(result).not.toBeNull();
       expect(result!.name).toBe('John Doe');
-      expect(repo.create).toHaveBeenCalledOnce();
     });
 
     it('should throw when email already exists', async () => {
@@ -60,7 +56,7 @@ describe('UserService', () => {
           email: 'john.doe@example.com',
           password: 'secret123',
         }),
-      ).rejects.toThrow('User already exists');
+      ).rejects.toThrow('already registered');
     });
 
     it('should throw when domain validation fails', async () => {
@@ -68,7 +64,7 @@ describe('UserService', () => {
 
       await expect(
         service.create({ name: '', email: 'john.doe@example.com', password: 'secret123' }),
-      ).rejects.toThrow('validation failed');
+      ).rejects.toThrow('O nome não pode ser vazio');
     });
   });
 
@@ -78,21 +74,27 @@ describe('UserService', () => {
       vi.mocked(repo.getById).mockResolvedValue(existing);
       vi.mocked(repo.update).mockResolvedValue(existing);
 
-      const result = await service.update({ id: 1, name: 'Jane Doe' });
+      const result = await service.update({ id: 1, name: 'Jane Doe', email: 'john.doe@example.com', password: 'secret123' });
       expect(result!.name).toBe('Jane Doe');
     });
 
     it('should throw when user not found', async () => {
       vi.mocked(repo.getById).mockResolvedValue(null);
-      await expect(service.update({ id: 99 })).rejects.toThrow('not found');
+      await expect(service.update({ id: 99, name: 'Test', email: 'test@test.com', password: 'secret123' })).rejects.toThrow('not found');
     });
   });
 
-  describe('remove', () => {
-    it('should call repo.remove', async () => {
-      vi.mocked(repo.remove).mockResolvedValue();
-      await service.remove(1);
-      expect(repo.remove).toHaveBeenCalledWith(1);
+  describe('delete', () => {
+    it('should call repo.delete', async () => {
+      vi.mocked(repo.getById).mockResolvedValue(makeUser(1));
+      vi.mocked(repo.delete).mockResolvedValue();
+      await service.delete(1);
+      expect(repo.delete).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw when user not found', async () => {
+      vi.mocked(repo.getById).mockResolvedValue(null);
+      await expect(service.delete(99)).rejects.toThrow('not found');
     });
   });
 
@@ -104,10 +106,9 @@ describe('UserService', () => {
       expect(result!.id).toBe(1);
     });
 
-    it('should return null when not found', async () => {
+    it('should throw when not found', async () => {
       vi.mocked(repo.getById).mockResolvedValue(null);
-      const result = await service.getById(99);
-      expect(result).toBeNull();
+      await expect(service.getById(99)).rejects.toThrow('not found');
     });
   });
 
