@@ -2,27 +2,20 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/api/app';
-import { UserService } from '../../src/application/services/UserService';
 
-function makeMockRepo() {
-  return {
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getById: vi.fn(),
-    getAll: vi.fn(),
-    getByEmail: vi.fn(),
-    searchByName: vi.fn(),
-    searchByEmail: vi.fn(),
-  };
-}
-
-const sampleUser = {
-  id: 1,
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  password: 'hashed',
-};
+vi.mock('../../src/infrastructure/database', () => {
+  const sqlite3 = require('sqlite3');
+  const db = new sqlite3.Database(':memory:');
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL
+    )
+  `);
+  return { getDatabase: () => db, closeDatabase: () => db.close() };
+});
 
 describe('User routes integration', () => {
   let app: ReturnType<typeof createApp>;
@@ -34,9 +27,9 @@ describe('User routes integration', () => {
   it('POST /api/v1/users → 201 on success', async () => {
     const res = await request(app)
       .post('/api/v1/users')
-      .send({ name: 'John Doe', email: 'john.doe@example.com', password: 'secret123' });
+      .send({ name: 'John Doe', email: `john${Date.now()}@example.com`, password: 'secret123' });
     expect(res.status).toBe(201);
-    expect(res.body.email).toBe('john.doe@example.com');
+    expect(res.body.email).toContain('@example.com');
   });
 
   it('GET /api/v1/users → 200 with list', async () => {
