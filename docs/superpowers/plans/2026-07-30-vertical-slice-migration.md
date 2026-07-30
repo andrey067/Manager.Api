@@ -44,6 +44,12 @@
 
 ---
 
+
+### .NET solutions (macOS)
+
+- **`dotnet/Manager.Vsa.sln`** — use for all VSA work (`Manager.Api`, `Manager.Vsa.Tests` only).
+- **`dotnet/Manager.sln`** — legacy Clean Architecture projects only. Do **not** add `Manager.Api` here: on case-insensitive volumes (macOS APFS), `Manager.API` and `Manager.Api` collide in the solution folder and `dotnet sln list` fails.
+
 ## File structure (target)
 
 ### .NET — create under `dotnet/`
@@ -125,7 +131,7 @@ Update `pyproject.toml` hatch packages + coverage sources to new packages when s
 - Create: `dotnet/tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj`
 - Create: `dotnet/tests/Manager.Vsa.Tests/Common/ResultTests.cs`
 - Modify: `dotnet/Directory.Packages.props` — add Scrutor, HybridCache, FluentValidation.DependencyInjectionExtensions; keep FluentValidation, EF, JWT, EscNet, test packages
-- Modify: `dotnet/Manager.sln` — add `Manager.Api` and `Manager.Vsa.Tests` projects (leave legacy projects for now)
+- Modify: `dotnet/Manager.Vsa.sln` — add `Manager.Api` and `Manager.Vsa.Tests` (create solution if missing; keep VSA out of `Manager.sln` on macOS)
 
 **Interfaces:**
 - Produces: `ErrorType` enum (`Failure`, `Validation`, `NotFound`, `Conflict`, `Problem`); `Error` record with `Code`, `Description`, `Type`; `Result` / `Result<T>` with `IsSuccess`, `Error`, `Value`, static `Success`/`Failure`, and `Match` methods used by endpoints later.
@@ -136,8 +142,9 @@ Update `pyproject.toml` hatch packages + coverage sources to new packages when s
 cd dotnet
 dotnet new web -n Manager.Api -o "src/Manager.Api" --no-https false
 dotnet new xunit -n Manager.Vsa.Tests -o "tests/Manager.Vsa.Tests"
-dotnet sln Manager.sln add "src/Manager.Api/Manager.Api.csproj"
-dotnet sln Manager.sln add "tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj"
+dotnet new sln -n Manager.Vsa --format sln
+dotnet sln Manager.Vsa.sln add "src/Manager.Api/Manager.Api.csproj"
+dotnet sln Manager.Vsa.sln add "tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj"
 dotnet add "tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj" reference "src/Manager.Api/Manager.Api.csproj"
 ```
 
@@ -197,7 +204,7 @@ public class ResultTests
 - [ ] **Step 3: Run test — expect fail**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~ResultTests
+cd dotnet && dotnet test Manager.Vsa.sln --filter FullyQualifiedName~ResultTests
 ```
 
 Expected: FAIL (types missing / compile errors).
@@ -257,7 +264,7 @@ public class Result<T> : Result
 - [ ] **Step 5: Run tests — expect pass**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~ResultTests
+cd dotnet && dotnet test Manager.Vsa.sln --filter FullyQualifiedName~ResultTests
 ```
 
 Expected: PASS.
@@ -265,7 +272,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add dotnet/src/Manager.Api dotnet/tests/Manager.Vsa.Tests dotnet/Directory.Packages.props dotnet/Manager.sln
+git add dotnet/src/Manager.Api dotnet/tests/Manager.Vsa.Tests dotnet/Directory.Packages.props dotnet/Manager.Vsa.sln
 git commit -m "feat(dotnet): add Manager.Api Result/Error foundation"
 ```
 
@@ -499,7 +506,7 @@ public class EntityTests
 - [ ] **Step 2: Run — expect fail**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~CustomResultsTests|FullyQualifiedName~EntityTests
+cd dotnet && dotnet test Manager.Vsa.sln --filter FullyQualifiedName~CustomResultsTests|FullyQualifiedName~EntityTests
 ```
 
 - [ ] **Step 3: Implement messaging + CustomResults + Entity + DateTime**
@@ -662,7 +669,7 @@ services.AddHybridCache();
 - [ ] **Step 3: Run health tests both stacks — pass**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~Health
+cd dotnet && dotnet test Manager.Vsa.sln --filter FullyQualifiedName~Health
 cd python && uv run pytest tests/api/test_health_vsa.py -v --no-cov
 ```
 
@@ -963,7 +970,7 @@ git commit -m "feat: VSA GetUserByEmail and search queries"
 - [ ] **Step 1: Run**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Vsa.Tests
+cd dotnet && dotnet test Manager.Vsa.sln
 cd python && uv run pytest tests/common tests/features tests/api/test_*vsa* -v --no-cov
 ```
 
@@ -982,7 +989,7 @@ git commit -m "test: VSA suite green and convention fixes"
 ### Task 17: Cutover — remove legacy layered code
 
 **Files:**
-- Modify: `dotnet/Manager.sln` — remove old API/Domain/Services/Infra/Core and their test projects; keep `Manager.Api` + `Manager.Vsa.Tests` (and IntegrationBase/Fixtures only if still referenced — otherwise delete or slim to Api.Tests only)
+- Modify: `dotnet/Manager.Vsa.sln` — ensure only `Manager.Api` + `Manager.Vsa.Tests` (and IntegrationBase/Fixtures only if still referenced). Retire or slim `dotnet/Manager.sln` legacy entries at cutover.
 - Delete: `dotnet/src/1 - Manager.API` through `5 - Manager.Core`, old `dotnet/tests/Manager.*.Tests` that target layers
 - Delete: `python/src/domain`, `application`, `infrastructure`, `api`, `shared` (after moving any still-needed config into new packages)
 - Modify: `python/pyproject.toml` — packages/coverage only `common`, `database`, `authentication`, `features`, `app`
@@ -994,7 +1001,7 @@ git commit -m "test: VSA suite green and convention fixes"
 - [ ] **Step 2: Full test run**
 
 ```bash
-cd dotnet && dotnet test
+cd dotnet && dotnet test Manager.Vsa.sln
 cd python && uv run pytest
 ```
 
