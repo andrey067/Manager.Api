@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using FluentValidation;
+using Manager.Api.Authentication;
 using Manager.Api.Common;
 using Manager.Api.Common.Messaging;
 using Manager.Api.Database;
@@ -41,6 +42,7 @@ builder.Services.Scan(scan => scan
 
 builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
 
+builder.Services.AddAuthenticationInfrastructure(builder.Configuration);
 AddJwt(builder.Services, builder.Configuration);
 
 var app = builder.Build();
