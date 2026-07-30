@@ -165,4 +165,4 @@ Same migration effort updates:
 - Tests cover handlers/validators/endpoints per conventions above.
 - AGENTS, rules, skills, and LikeC4 describe VSA, not Clean Architecture layers.
 - `vsa-review` reports no blockers on the migrated code.
-`}
+
