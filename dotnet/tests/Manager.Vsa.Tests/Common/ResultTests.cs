@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Manager.Api.Common;
 
-namespace Manager.Api.Tests.Common;
+namespace Manager.Vsa.Tests.Common;
 
 public class ResultTests
 {

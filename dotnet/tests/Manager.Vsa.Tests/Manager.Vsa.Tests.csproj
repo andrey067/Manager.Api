@@ -4,6 +4,7 @@
   </ItemGroup>
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <RootNamespace>Manager.Vsa.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector">

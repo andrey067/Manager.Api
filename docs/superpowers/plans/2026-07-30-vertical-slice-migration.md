@@ -77,8 +77,8 @@ src/Manager.Api/
     SearchUsersByName.cs, SearchUsersByEmail.cs
   Features/Auth/
     Login.cs, RefreshToken.cs
-tests/Manager.Api.Tests/
-  Manager.Api.Tests.csproj
+tests/Manager.Vsa.Tests/
+  Manager.Vsa.Tests.csproj
   Common/ResultTests.cs, …
   Features/... (handler, validator, endpoint tests)
   Infrastructure/CustomWebApplicationFactory.cs, PostgresCollection.cs
@@ -122,10 +122,10 @@ Update `pyproject.toml` hatch packages + coverage sources to new packages when s
 - Create: `dotnet/src/Manager.Api/Common/Error.cs`
 - Create: `dotnet/src/Manager.Api/Common/Result.cs`
 - Create: `dotnet/src/Manager.Api/Common/ResultT.cs`
-- Create: `dotnet/tests/Manager.Api.Tests/Manager.Api.Tests.csproj`
-- Create: `dotnet/tests/Manager.Api.Tests/Common/ResultTests.cs`
+- Create: `dotnet/tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj`
+- Create: `dotnet/tests/Manager.Vsa.Tests/Common/ResultTests.cs`
 - Modify: `dotnet/Directory.Packages.props` — add Scrutor, HybridCache, FluentValidation.DependencyInjectionExtensions; keep FluentValidation, EF, JWT, EscNet, test packages
-- Modify: `dotnet/Manager.sln` — add `Manager.Api` and `Manager.Api.Tests` projects (leave legacy projects for now)
+- Modify: `dotnet/Manager.sln` — add `Manager.Api` and `Manager.Vsa.Tests` projects (leave legacy projects for now)
 
 **Interfaces:**
 - Produces: `ErrorType` enum (`Failure`, `Validation`, `NotFound`, `Conflict`, `Problem`); `Error` record with `Code`, `Description`, `Type`; `Result` / `Result<T>` with `IsSuccess`, `Error`, `Value`, static `Success`/`Failure`, and `Match` methods used by endpoints later.
@@ -135,10 +135,10 @@ Update `pyproject.toml` hatch packages + coverage sources to new packages when s
 ```bash
 cd dotnet
 dotnet new web -n Manager.Api -o "src/Manager.Api" --no-https false
-dotnet new xunit -n Manager.Api.Tests -o "tests/Manager.Api.Tests"
+dotnet new xunit -n Manager.Vsa.Tests -o "tests/Manager.Vsa.Tests"
 dotnet sln Manager.sln add "src/Manager.Api/Manager.Api.csproj"
-dotnet sln Manager.sln add "tests/Manager.Api.Tests/Manager.Api.Tests.csproj"
-dotnet add "tests/Manager.Api.Tests/Manager.Api.Tests.csproj" reference "src/Manager.Api/Manager.Api.csproj"
+dotnet sln Manager.sln add "tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj"
+dotnet add "tests/Manager.Vsa.Tests/Manager.Vsa.Tests.csproj" reference "src/Manager.Api/Manager.Api.csproj"
 ```
 
 Edit `Manager.Api.csproj` to `net10.0`, enable nullable, and PackageReferences (versions from CPM): `FluentValidation`, `FluentValidation.DependencyInjectionExtensions`, `Microsoft.EntityFrameworkCore`, `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.AspNetCore.Authentication.JwtBearer`, `EscNet`, `Scrutor`, `Microsoft.Extensions.Caching.Hybrid`, `Swashbuckle.AspNetCore`.
@@ -156,11 +156,11 @@ Test project: FluentAssertions, Moq, Microsoft.AspNetCore.Mvc.Testing, Testconta
 - [ ] **Step 2: Write failing Result tests**
 
 ```csharp
-// tests/Manager.Api.Tests/Common/ResultTests.cs
+// tests/Manager.Vsa.Tests/Common/ResultTests.cs
 using FluentAssertions;
 using Manager.Api.Common;
 
-namespace Manager.Api.Tests.Common;
+namespace Manager.Vsa.Tests.Common;
 
 public class ResultTests
 {
@@ -197,7 +197,7 @@ public class ResultTests
 - [ ] **Step 3: Run test — expect fail**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Api.Tests --filter FullyQualifiedName~ResultTests
+cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~ResultTests
 ```
 
 Expected: FAIL (types missing / compile errors).
@@ -257,7 +257,7 @@ public class Result<T> : Result
 - [ ] **Step 5: Run tests — expect pass**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Api.Tests --filter FullyQualifiedName~ResultTests
+cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~ResultTests
 ```
 
 Expected: PASS.
@@ -265,7 +265,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add dotnet/src/Manager.Api dotnet/tests/Manager.Api.Tests dotnet/Directory.Packages.props dotnet/Manager.sln
+git add dotnet/src/Manager.Api dotnet/tests/Manager.Vsa.Tests dotnet/Directory.Packages.props dotnet/Manager.sln
 git commit -m "feat(dotnet): add Manager.Api Result/Error foundation"
 ```
 
@@ -432,8 +432,8 @@ git commit -m "feat(python): add common Result/Error foundation"
 - Create: `dotnet/src/Manager.Api/Common/IEndpoint.cs`, `EndpointExtensions.cs`, `Tags.cs`, `CustomResults.cs`
 - Create: `dotnet/src/Manager.Api/Common/IDateTimeProvider.cs`, `SystemDateTimeProvider.cs`
 - Create: `dotnet/src/Manager.Api/Common/Domain/IDomainEvent.cs`, `Entity.cs`
-- Create: `dotnet/tests/Manager.Api.Tests/Common/CustomResultsTests.cs`
-- Create: `dotnet/tests/Manager.Api.Tests/Common/EntityTests.cs`
+- Create: `dotnet/tests/Manager.Vsa.Tests/Common/CustomResultsTests.cs`
+- Create: `dotnet/tests/Manager.Vsa.Tests/Common/EntityTests.cs`
 
 **Interfaces:**
 - Produces:
@@ -448,12 +448,12 @@ git commit -m "feat(python): add common Result/Error foundation"
 - [ ] **Step 1: Write failing tests for CustomResults status mapping and Entity.Raise**
 
 ```csharp
-// tests/Manager.Api.Tests/Common/CustomResultsTests.cs
+// tests/Manager.Vsa.Tests/Common/CustomResultsTests.cs
 using FluentAssertions;
 using Manager.Api.Common;
 using Microsoft.AspNetCore.Http;
 
-namespace Manager.Api.Tests.Common;
+namespace Manager.Vsa.Tests.Common;
 
 public class CustomResultsTests
 {
@@ -473,11 +473,11 @@ public class CustomResultsTests
     }
 }
 
-// tests/Manager.Api.Tests/Common/EntityTests.cs
+// tests/Manager.Vsa.Tests/Common/EntityTests.cs
 using FluentAssertions;
 using Manager.Api.Common.Domain;
 
-namespace Manager.Api.Tests.Common;
+namespace Manager.Vsa.Tests.Common;
 
 file sealed record TestEvent(long Id) : IDomainEvent;
 file sealed class TestEntity : Entity;
@@ -499,7 +499,7 @@ public class EntityTests
 - [ ] **Step 2: Run — expect fail**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Api.Tests --filter FullyQualifiedName~CustomResultsTests|FullyQualifiedName~EntityTests
+cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~CustomResultsTests|FullyQualifiedName~EntityTests
 ```
 
 - [ ] **Step 3: Implement messaging + CustomResults + Entity + DateTime**
@@ -662,7 +662,7 @@ services.AddHybridCache();
 - [ ] **Step 3: Run health tests both stacks — pass**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Api.Tests --filter FullyQualifiedName~Health
+cd dotnet && dotnet test tests/Manager.Vsa.Tests --filter FullyQualifiedName~Health
 cd python && uv run pytest tests/api/test_health_vsa.py -v --no-cov
 ```
 
@@ -963,7 +963,7 @@ git commit -m "feat: VSA GetUserByEmail and search queries"
 - [ ] **Step 1: Run**
 
 ```bash
-cd dotnet && dotnet test tests/Manager.Api.Tests
+cd dotnet && dotnet test tests/Manager.Vsa.Tests
 cd python && uv run pytest tests/common tests/features tests/api/test_*vsa* -v --no-cov
 ```
 
@@ -982,7 +982,7 @@ git commit -m "test: VSA suite green and convention fixes"
 ### Task 17: Cutover — remove legacy layered code
 
 **Files:**
-- Modify: `dotnet/Manager.sln` — remove old API/Domain/Services/Infra/Core and their test projects; keep `Manager.Api` + `Manager.Api.Tests` (and IntegrationBase/Fixtures only if still referenced — otherwise delete or slim to Api.Tests only)
+- Modify: `dotnet/Manager.sln` — remove old API/Domain/Services/Infra/Core and their test projects; keep `Manager.Api` + `Manager.Vsa.Tests` (and IntegrationBase/Fixtures only if still referenced — otherwise delete or slim to Api.Tests only)
 - Delete: `dotnet/src/1 - Manager.API` through `5 - Manager.Core`, old `dotnet/tests/Manager.*.Tests` that target layers
 - Delete: `python/src/domain`, `application`, `infrastructure`, `api`, `shared` (after moving any still-needed config into new packages)
 - Modify: `python/pyproject.toml` — packages/coverage only `common`, `database`, `authentication`, `features`, `app`
