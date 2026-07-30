@@ -45,7 +45,7 @@ class JwtTokenService:
         return base64.b64encode(secrets.token_bytes(64)).decode("ascii")
 
     def hash_refresh_token(self, refresh_token: str) -> str:
-        return hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
+        return hashlib.sha256(refresh_token.encode("utf-8")).hexdigest().upper()
 
     def get_access_expiry(self) -> datetime:
         return self._clock.utc_now() + timedelta(hours=self._settings.hours_to_expire)

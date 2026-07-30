@@ -31,7 +31,7 @@ def _service(clock: FixedClock | None = None) -> JwtTokenService:
 def test_hash_refresh_token_produces_stable_sha256_hex() -> None:
     svc = _service()
     raw = "refresh-token-value"
-    expected = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    expected = hashlib.sha256(raw.encode("utf-8")).hexdigest().upper()
     assert svc.hash_refresh_token(raw) == expected
     assert svc.hash_refresh_token(raw) == expected
 
