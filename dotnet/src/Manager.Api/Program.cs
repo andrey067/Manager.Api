@@ -24,19 +24,19 @@ builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInte
 
 builder.Services.Scan(scan => scan
     .FromAssemblyOf<Program>()
-    .AddClasses(c => c.AssignableTo(typeof(ICommandHandler<>)))
+    .AddClasses(c => c.AssignableTo(typeof(ICommandHandler<>)), publicOnly: false)
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 
 builder.Services.Scan(scan => scan
     .FromAssemblyOf<Program>()
-    .AddClasses(c => c.AssignableTo(typeof(ICommandHandler<,>)))
+    .AddClasses(c => c.AssignableTo(typeof(ICommandHandler<,>)), publicOnly: false)
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 
 builder.Services.Scan(scan => scan
     .FromAssemblyOf<Program>()
-    .AddClasses(c => c.AssignableTo(typeof(IQueryHandler<,>)))
+    .AddClasses(c => c.AssignableTo(typeof(IQueryHandler<,>)), publicOnly: false)
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 
