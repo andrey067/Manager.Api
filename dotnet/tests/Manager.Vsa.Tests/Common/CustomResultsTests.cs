@@ -19,5 +19,10 @@ public class CustomResultsTests
         httpContext.Response.Body = new MemoryStream();
         await CustomResults.Problem(error).ExecuteAsync(httpContext);
         httpContext.Response.StatusCode.Should().Be(status);
+
+        httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(httpContext.Response.Body);
+        var body = await reader.ReadToEndAsync();
+        body.Should().Contain("\"errorCode\":\"Users.Test\"");
     }
 }
