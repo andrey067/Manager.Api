@@ -29,7 +29,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Manager.Services.Tests", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Manager.Infra.Tests", "tests\Manager.Infra.Tests\Manager.Infra.Tests.csproj", "{E5E5E5E5-5555-5555-5555-555555555555}"
 EndProject
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Manager.Vsa.Tests", "tests\Manager.Vsa.Tests\Manager.Vsa.Tests.csproj", "{C1C1C1C1-BBBB-BBBB-BBBB-BBBBBBBBBBBB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Manager.Core.Tests", "tests\Manager.Core.Tests\Manager.Core.Tests.csproj", "{A7A7A7A7-7777-7777-7777-777777777777}"
