@@ -1,12 +1,14 @@
 from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Generic, TypeVar
+
 from common.error import Error
 
 T = TypeVar("T")
 R = TypeVar("R")
 
-class Result(Generic[T]):
+class Result(Generic[T]):  # noqa: UP046
     def __init__(self, value: T | None, error: Error | None, is_success: bool) -> None:
         self._value = value
         self._error = error
