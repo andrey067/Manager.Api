@@ -61,11 +61,15 @@ async def test_delete_users_with_jwt_removes_user(
     vsa_session: AsyncSession,
     password_hasher: Argon2PasswordHasher,
 ) -> None:
-    target = await seed_user(vsa_session, password_hasher, email="target@example.com", name="Target")
+    target = await seed_user(
+        vsa_session, password_hasher, email="target@example.com", name="Target"
+    )
     admin = await seed_user(vsa_session, password_hasher, email="admin@example.com")
     headers = _auth_headers(admin.id, admin.email)
 
-    response = await remove_user_client.delete(f"/api/v1/users/{target.id}", headers=headers)
+    response = await remove_user_client.delete(
+        f"/api/v1/users/{target.id}", headers=headers
+    )
 
     assert response.status_code == 204
     assert response.content == b""

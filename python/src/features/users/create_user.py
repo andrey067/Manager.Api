@@ -18,8 +18,8 @@ from database.models import UserModel
 from database.session import get_db
 from features.users.cache_keys import UserCacheKeys
 from features.users.dependencies import get_app_cache
-from features.users.errors import UserErrors
 from features.users.entity import User
+from features.users.errors import UserErrors
 from features.users.events import UserCreatedDomainEvent
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])

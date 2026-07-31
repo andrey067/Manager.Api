@@ -44,9 +44,7 @@ def get_hash_settings() -> HashSettings:
 def get_jwt_settings() -> JwtSettings:
     secret = os.getenv("JWT_SECRET", "").strip()
     if len(secret) < 32:
-        raise RuntimeError(
-            "JWT_SECRET must be configured with at least 32 characters."
-        )
+        raise RuntimeError("JWT_SECRET must be configured with at least 32 characters.")
     return JwtSettings(
         secret=secret,
         issuer=os.getenv("JWT_ISSUER", "Manager.Api"),

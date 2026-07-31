@@ -27,8 +27,6 @@ async def login_client(
         async with factory() as session:
             yield session
 
-    from database.session import get_db
-
     app.dependency_overrides[get_db] = override_get_db
 
     transport = ASGITransport(app=app)

@@ -16,7 +16,6 @@ from sqlalchemy.pool import StaticPool
 from authentication.config import JwtSettings
 from authentication.password_hasher import Argon2PasswordHasher
 from authentication.token_service import JwtTokenService
-from common.clock import Clock
 from database.models import UserModel
 from database.session import Base
 
@@ -122,9 +121,7 @@ async def seed_user_with_refresh_token(
     if expires_at is None:
         expires_at = token_service.get_refresh_expiry()
     stored_expires = (
-        expires_at.replace(tzinfo=None)
-        if expires_at.tzinfo is not None
-        else expires_at
+        expires_at.replace(tzinfo=None) if expires_at.tzinfo is not None else expires_at
     )
     user = UserModel(
         name=name,

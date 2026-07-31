@@ -10,10 +10,10 @@ from features.users.create_user import router as create_user_router
 from features.users.get_all_users import router as get_all_users_router
 from features.users.get_user import router as get_user_router
 from features.users.get_user_by_email import router as get_user_by_email_router
-from features.users.search_users_by_email import router as search_users_by_email_router
-from features.users.search_users_by_name import router as search_users_by_name_router
 from features.users.register_bootstrap import router as register_bootstrap_router
 from features.users.remove_user import router as remove_user_router
+from features.users.search_users_by_email import router as search_users_by_email_router
+from features.users.search_users_by_name import router as search_users_by_name_router
 from features.users.update_user import router as update_user_router
 
 

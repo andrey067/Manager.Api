@@ -24,7 +24,9 @@ async def test_handler_invalid_credentials_when_user_not_found(
 ) -> None:
     handler = Handler(vsa_session, password_hasher, token_service)
 
-    result = await handler.handle(Command(login="missing@example.com", password="secret"))
+    result = await handler.handle(
+        Command(login="missing@example.com", password="secret")
+    )
 
     assert result.is_failure
     assert result.error.code == "Auth.InvalidCredentials"
@@ -74,7 +76,9 @@ async def test_handler_success_persists_refresh_token_hash(
     assert result.value.refresh_token
     expected_refresh_expires = fixed_clock.utc_now() + timedelta(days=7)
 
-    assert result.value.access_token_expires == fixed_clock.utc_now() + timedelta(hours=1)
+    assert result.value.access_token_expires == fixed_clock.utc_now() + timedelta(
+        hours=1
+    )
     assert result.value.refresh_token_expires == expected_refresh_expires
 
     row = (
@@ -105,7 +109,5 @@ def test_validator_rejects_empty_password() -> None:
 
 
 def test_validator_accepts_valid_command() -> None:
-    errors = Validator().validate(
-        Command(login="user@example.com", password="secret")
-    )
+    errors = Validator().validate(Command(login="user@example.com", password="secret"))
     assert errors == []

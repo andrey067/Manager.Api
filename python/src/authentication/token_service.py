@@ -20,9 +20,7 @@ class JwtTokenService:
         self._settings = settings
         self._clock = clock or SystemClock()
 
-    def create_access_token(
-        self, user_id: int, email: str
-    ) -> tuple[str, datetime]:
+    def create_access_token(self, user_id: int, email: str) -> tuple[str, datetime]:
         expires = self.get_access_expiry()
         payload = {
             "sub": str(user_id),
@@ -67,8 +65,10 @@ class JwtTokenService:
             )
             exp = payload.get("exp")
             if exp is not None:
-                exp_dt = exp if isinstance(exp, datetime) else datetime.fromtimestamp(
-                    int(exp), UTC
+                exp_dt = (
+                    exp
+                    if isinstance(exp, datetime)
+                    else datetime.fromtimestamp(int(exp), UTC)
                 )
                 if exp_dt.tzinfo is None:
                     exp_dt = exp_dt.replace(tzinfo=UTC)

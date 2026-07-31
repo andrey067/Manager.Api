@@ -9,6 +9,7 @@ class ErrorType(Enum):
     CONFLICT = "Conflict"
     PROBLEM = "Problem"
 
+
 @dataclass(frozen=True, slots=True)
 class Error:
     code: str

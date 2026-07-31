@@ -51,10 +51,10 @@ class Handler:
     async def handle(self, query: Query) -> Result[list[Response]]:
         async def factory() -> list[Response]:
             models = (
-                await self._session.execute(
-                    select(UserModel).order_by(UserModel.id)
-                )
-            ).scalars().all()
+                (await self._session.execute(select(UserModel).order_by(UserModel.id)))
+                .scalars()
+                .all()
+            )
             return [
                 Response(id=model.id, name=model.name, email=model.email)
                 for model in models

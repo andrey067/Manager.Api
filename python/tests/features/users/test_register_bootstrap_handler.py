@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,9 +11,6 @@ from database.models import UserModel
 from features.users.cache_keys import UserCacheKeys
 from features.users.entity import User
 from features.users.events import UserCreatedDomainEvent
-import pytest
-from pydantic import ValidationError
-
 from features.users.register_bootstrap import BootstrapRequest, Command, Handler
 from tests.features.conftest import seed_user
 
@@ -120,9 +118,7 @@ def test_bootstrap_request_rejects_short_password() -> None:
 
 def test_bootstrap_request_rejects_long_password() -> None:
     with pytest.raises(ValidationError):
-        BootstrapRequest(
-            name="Valid Name", email="user@example.com", password="a" * 31
-        )
+        BootstrapRequest(name="Valid Name", email="user@example.com", password="a" * 31)
 
 
 def test_bootstrap_request_accepts_valid_payload() -> None:

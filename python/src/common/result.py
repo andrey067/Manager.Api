@@ -8,6 +8,7 @@ from common.error import Error
 T = TypeVar("T")
 R = TypeVar("R")
 
+
 class Result(Generic[T]):  # noqa: UP046
     def __init__(self, value: T | None, error: Error | None, is_success: bool) -> None:
         self._value = value
@@ -38,7 +39,9 @@ class Result(Generic[T]):  # noqa: UP046
     def failure(error: Error) -> Result[T]:
         return Result(None, error, False)
 
-    def match(self, on_success: Callable[..., R], on_failure: Callable[[Error], R]) -> R:
+    def match(
+        self, on_success: Callable[..., R], on_failure: Callable[[Error], R]
+    ) -> R:
         if self.is_success:
             if self._value is None:
                 return on_success()

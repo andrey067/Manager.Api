@@ -107,7 +107,9 @@ async def test_post_users_duplicate_email_returns_email_conflict(
     password_hasher: Argon2PasswordHasher,
 ) -> None:
     admin = await seed_user(vsa_session, password_hasher, email="admin@example.com")
-    await seed_user(vsa_session, password_hasher, email="existing@example.com", name="Existing")
+    await seed_user(
+        vsa_session, password_hasher, email="existing@example.com", name="Existing"
+    )
     headers = _auth_headers(admin.id, admin.email)
 
     response = await create_user_client.post(
