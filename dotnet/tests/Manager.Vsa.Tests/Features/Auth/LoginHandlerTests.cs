@@ -90,6 +90,9 @@ public class LoginHandlerTests
         var persisted = await db.Users.SingleAsync(u => u.Email == "user@example.com");
         persisted.RefreshTokenHash.Should().Be(tokens.HashRefreshToken(result.Value.RefreshToken));
         persisted.RefreshTokenExpiresAt.Should().Be(clock.UtcNow.AddDays(7));
+        persisted.DomainEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<UserLoggedInDomainEvent>()
+            .Which.Id.Should().Be(persisted.Id);
     }
 
     private sealed class TestPasswordHasher : IPasswordHasher

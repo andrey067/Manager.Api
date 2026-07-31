@@ -25,4 +25,16 @@ public class UserDomainEventsTests
         var evt = new UserRemovedDomainEvent(9);
         evt.Id.Should().Be(9);
     }
+
+    [Fact]
+    public void UserLoggedInDomainEvent_HasId()
+    {
+        new UserLoggedInDomainEvent(11).Id.Should().Be(11);
+    }
+
+    [Fact]
+    public void UserTokenRefreshedDomainEvent_HasId()
+    {
+        new UserTokenRefreshedDomainEvent(12).Id.Should().Be(12);
+    }
 }

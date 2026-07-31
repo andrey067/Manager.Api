@@ -3,6 +3,7 @@ using Manager.Api.Authentication;
 using Manager.Api.Common;
 using Manager.Api.Common.Messaging;
 using Manager.Api.Database;
+using Manager.Api.Features.Users;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,7 @@ public static class RefreshToken
             var refreshExpires = tokens.GetRefreshExpiry();
 
             user.SetRefreshToken(tokens.HashRefreshToken(refresh), refreshExpires);
+            user.Raise(new UserTokenRefreshedDomainEvent(user.Id));
             await db.SaveChangesAsync(cancellationToken);
 
             return Result.Success(new Response(

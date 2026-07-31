@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from authentication.token_service import JwtTokenService
 from database.models import UserModel
 from features.auth.refresh_token import Command, Handler, Validator
+from features.users.entity import User
+from features.users.events import UserTokenRefreshedDomainEvent
 from tests.features.auth.conftest import FixedClock, seed_user_with_refresh_token
 
 
@@ -51,6 +53,7 @@ async def test_handler_success_rotates_refresh_token_hash(
     vsa_session: AsyncSession,
     token_service: JwtTokenService,
     fixed_clock: FixedClock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     refresh_token = "valid-refresh-token"
     user = await seed_user_with_refresh_token(
@@ -60,6 +63,15 @@ async def test_handler_success_rotates_refresh_token_hash(
     )
     original_hash = user.refresh_token_hash
     handler = Handler(vsa_session, token_service, clock=fixed_clock)
+    persisted_users: list[User] = []
+    original_from_persistence = User.from_persistence
+
+    def track_from_persistence(**kwargs: object) -> User:
+        domain_user = original_from_persistence(**kwargs)  # type: ignore[arg-type]
+        persisted_users.append(domain_user)
+        return domain_user
+
+    monkeypatch.setattr(User, "from_persistence", track_from_persistence)
 
     result = await handler.handle(Command(refresh_token=refresh_token))
 
@@ -82,6 +94,12 @@ async def test_handler_success_rotates_refresh_token_hash(
         result.value.refresh_token
     )
     assert row.refresh_token_expires_at == expected_refresh_expires.replace(tzinfo=None)
+
+    assert len(persisted_users) == 1
+    assert len(persisted_users[0].domain_events) == 1
+    event = persisted_users[0].domain_events[0]
+    assert isinstance(event, UserTokenRefreshedDomainEvent)
+    assert event.id == user.id
 
 
 def test_validator_rejects_empty_refresh_token() -> None:

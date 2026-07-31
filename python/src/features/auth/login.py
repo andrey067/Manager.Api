@@ -18,6 +18,8 @@ from common.problem import problem_response
 from common.result import Result
 from database.models import UserModel
 from database.session import get_db
+from features.users.entity import User
+from features.users.events import UserLoggedInDomainEvent
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
@@ -93,7 +95,17 @@ class Handler:
         refresh_expires = self._tokens.get_refresh_expiry()
 
         user.refresh_token_hash = self._tokens.hash_refresh_token(refresh_token)
-        user.refresh_token_expires_at = refresh_expires
+        user.refresh_token_expires_at = refresh_expires.replace(tzinfo=None)
+
+        domain_user = User.from_persistence(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            password=user.password,
+            refresh_token_hash=user.refresh_token_hash,
+            refresh_token_expires_at=user.refresh_token_expires_at,
+        )
+        domain_user.raise_event(UserLoggedInDomainEvent(id=domain_user.id))
         await self._session.commit()
 
         return Result.success(

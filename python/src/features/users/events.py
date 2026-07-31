@@ -16,3 +16,13 @@ class UserUpdatedDomainEvent:
 @dataclass(frozen=True, slots=True)
 class UserRemovedDomainEvent:
     id: int
+
+
+@dataclass(frozen=True, slots=True)
+class UserLoggedInDomainEvent:
+    id: int
+
+
+@dataclass(frozen=True, slots=True)
+class UserTokenRefreshedDomainEvent:
+    id: int

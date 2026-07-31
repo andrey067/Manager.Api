@@ -95,5 +95,8 @@ public class RefreshTokenHandlerTests
         persisted.RefreshTokenHash.Should().NotBe(originalHash);
         persisted.RefreshTokenHash.Should().Be(tokens.HashRefreshToken(result.Value.RefreshToken));
         persisted.RefreshTokenExpiresAt.Should().Be(clock.UtcNow.AddDays(7));
+        persisted.DomainEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<UserTokenRefreshedDomainEvent>()
+            .Which.Id.Should().Be(persisted.Id);
     }
 }
