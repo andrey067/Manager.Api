@@ -84,14 +84,23 @@ public static class UpdateUser
                     async (
                         long id,
                         Request request,
+                        [FromServices] IValidator<Command> validator,
                         [FromServices] ICommandHandler<Command, Response> handler,
                         CancellationToken cancellationToken) =>
                     {
                         var command = new Command(id, request.Name, request.Email, request.Password);
+                        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+                        if (!validationResult.IsValid)
+                        {
+                            var description = string.Join(
+                                "; ",
+                                validationResult.Errors.Select(e => e.ErrorMessage));
+                            return CustomResults.Problem(Error.Validation("Validation.Error", description));
+                        }
+
                         var result = await handler.Handle(command, cancellationToken);
                         return result.Match(Results.Ok, CustomResults.Problem);
                     })
-                .AddEndpointFilter<ValidationEndpointFilter<Command>>()
                 .RequireAuthorization()
                 .WithTags(Tags.Users);
     }

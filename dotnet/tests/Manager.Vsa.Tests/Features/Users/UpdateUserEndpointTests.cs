@@ -26,6 +26,25 @@ public class UpdateUserEndpointTests(CreateUserWebApplicationFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+
+    [Fact]
+    public async Task PutUsers_InvalidBody_ReturnsValidationError()
+    {
+        var target = await SeedUserAsync("target@example.com", "Target User", "Password1!");
+        await SeedUserAsync("admin@example.com", "Admin User", "Password1!");
+        var token = await LoginAsync("admin@example.com", "Password1!");
+
+        var response = await PutUsersAsync(
+            token,
+            target.Id,
+            new { name = "Updated User", email = "updated@example.com", password = "short" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("errorCode").GetString().Should().Be("Validation.Error");
+    }
+
     [Fact]
     public async Task PutUsers_WithJwt_UpdatesUser()
     {
