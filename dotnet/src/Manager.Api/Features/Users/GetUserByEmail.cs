@@ -19,34 +19,26 @@ public static class GetUserByEmail
     {
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
-            try
+            var response = await cache.GetOrCreateAsync(
+                UserCacheKeys.ByEmail(query.Email),
+                async ct =>
+                {
+                    return await db.Users
+                        .AsNoTracking()
+                        .Where(u => u.Email.ToLower() == query.Email.ToLower())
+                        .Select(u => new Response(u.Id, u.Name, u.Email))
+                        .SingleOrDefaultAsync(ct);
+                },
+                cancellationToken: cancellationToken);
+
+            if (response is null)
             {
-                var response = await cache.GetOrCreateAsync(
-                    UserCacheKeys.ByEmail(query.Email),
-                    async ct =>
-                    {
-                        var user = await db.Users
-                            .AsNoTracking()
-                            .Where(u => u.Email.ToLower() == query.Email.ToLower())
-                            .Select(u => new Response(u.Id, u.Name, u.Email))
-                            .SingleOrDefaultAsync(ct);
-
-                        if (user is null)
-                            throw new UserNotFoundException();
-
-                        return user;
-                    },
-                    cancellationToken: cancellationToken);
-
-                return Result.Success(response);
-            }
-            catch (UserNotFoundException)
-            {
+                await cache.RemoveAsync(UserCacheKeys.ByEmail(query.Email), cancellationToken);
                 return Result.Failure<Response>(UserErrors.NotFound());
             }
-        }
 
-        private sealed class UserNotFoundException : Exception;
+            return Result.Success(response);
+        }
     }
 
     public sealed class Endpoint : IEndpoint

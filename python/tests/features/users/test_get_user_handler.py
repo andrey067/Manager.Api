@@ -55,6 +55,29 @@ async def test_handler_success_loads_from_database_and_caches(
 
 
 @pytest.mark.asyncio
+async def test_handler_not_found_does_not_poison_cache_allows_later_success(
+    vsa_session: AsyncSession,
+    password_hasher: Argon2PasswordHasher,
+) -> None:
+    cache = AppCache()
+    handler = Handler(vsa_session, cache)
+
+    miss = await handler.handle(Query(id=1))
+    assert miss.is_failure
+
+    user = await seed_user(
+        vsa_session,
+        password_hasher,
+        email="later@example.com",
+        name="Later",
+    )
+
+    hit = await handler.handle(Query(id=user.id))
+    assert hit.is_success
+    assert hit.value.email == "later@example.com"
+
+
+@pytest.mark.asyncio
 async def test_handler_cache_hit_returns_cached_without_database(
     vsa_session: AsyncSession,
 ) -> None:

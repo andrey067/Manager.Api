@@ -60,6 +60,24 @@ public class GetUserHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NotFound_DoesNotPoisonCache_AllowsLaterSuccess()
+    {
+        var (handler, db, _) = await CreateSut();
+
+        var miss = await handler.Handle(new GetUser.Query(1), CancellationToken.None);
+        miss.IsFailure.Should().BeTrue();
+
+        var hasher = new TestPasswordHasher();
+        var user = User.Create("Later", "later@example.com", hasher.Hash("Password1!"));
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var hit = await handler.Handle(new GetUser.Query(user.Id), CancellationToken.None);
+        hit.IsSuccess.Should().BeTrue();
+        hit.Value.Email.Should().Be("later@example.com");
+    }
+
+    [Fact]
     public async Task Handle_CacheHit_ReturnsCachedWithoutDatabase()
     {
         var (handler, db, cache) = await CreateSut();

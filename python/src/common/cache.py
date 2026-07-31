@@ -34,6 +34,8 @@ class AppCache:
             return entry.value
 
         value = await self._invoke_factory(factory)
+        if value is None:
+            return None
         expires_at = now + timedelta(seconds=ttl_seconds)
         self._entries[key] = _CacheEntry(value=value, expires_at=expires_at)
         return value

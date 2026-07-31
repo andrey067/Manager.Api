@@ -36,10 +36,6 @@ class Response:
     email: str
 
 
-class _UserNotFound(Exception):
-    pass
-
-
 class GetUserResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -56,25 +52,23 @@ class Handler:
     async def handle(self, query: Query) -> Result[Response]:
         cache_key = UserCacheKeys.by_id(query.id)
 
-        async def factory() -> Response:
+        async def factory() -> Response | None:
             model = (
                 await self._session.execute(
                     select(UserModel).where(UserModel.id == query.id)
                 )
             ).scalar_one_or_none()
             if model is None:
-                raise _UserNotFound()
+                return None
             return Response(id=model.id, name=model.name, email=model.email)
 
-        try:
-            response = await self._cache.get_or_set(
-                cache_key,
-                factory,
-                ttl_seconds=_CACHE_TTL_SECONDS,
-            )
-        except _UserNotFound:
+        response = await self._cache.get_or_set(
+            cache_key,
+            factory,
+            ttl_seconds=_CACHE_TTL_SECONDS,
+        )
+        if response is None:
             return Result.failure(UserErrors.not_found())
-
         return Result.success(response)
 
 
