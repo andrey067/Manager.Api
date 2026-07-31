@@ -10,8 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Users;
 
+[Collection("RegisterBootstrap")]
 public class RegisterBootstrapEndpointTests(RegisterBootstrapWebApplicationFactory factory)
-    : IClassFixture<RegisterBootstrapWebApplicationFactory>
 {
     private readonly HttpClient _client = factory.CreateClient();
 

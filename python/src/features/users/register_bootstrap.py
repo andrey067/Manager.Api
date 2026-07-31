@@ -118,19 +118,29 @@ class Handler:
         if count > 0:
             return Result.failure(UserErrors.bootstrap_not_allowed())
 
+        name = command.name.strip()
+        email = command.email.strip()
         hashed = self._hasher.hash(command.password)
-        user = User(command.name, command.email, hashed)
-        model = UserModel(name=user.name, email=user.email, password=user.password)
+        model = UserModel(name=name, email=email, password=hashed)
         self._session.add(model)
         await self._session.commit()
         await self._session.refresh(model)
 
-        user.id = model.id
-        user.raise_event(UserCreatedDomainEvent(id=model.id))
+        persisted_user = User.from_persistence(
+            id=model.id,
+            name=model.name,
+            email=model.email,
+            password=model.password,
+        )
+        persisted_user.raise_event(UserCreatedDomainEvent(id=persisted_user.id))
         await self._cache.remove(UserCacheKeys.ALL)
 
         return Result.success(
-            Response(id=model.id, name=model.name, email=model.email)
+            Response(
+                id=persisted_user.id,
+                name=persisted_user.name,
+                email=persisted_user.email,
+            )
         )
 
 
@@ -161,7 +171,12 @@ async def register_bootstrap(
         detail = "; ".join(e.message for e in validation_errors)
         return problem_response(Error.validation("Validation.Error", detail))
 
-    result = await handler.handle(command)
+    normalized = Command(
+        name=command.name.strip(),
+        email=command.email.strip(),
+        password=command.password,
+    )
+    result = await handler.handle(normalized)
     return result.match(
         on_success=lambda value: BootstrapResponse(
             id=value.id,
