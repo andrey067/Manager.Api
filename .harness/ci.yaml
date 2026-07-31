@@ -7,27 +7,17 @@ spec:
       spec:
         volumes:
           - name: dockersock
-            spec: {}
-            type: temp
-        steps:
-          - name: dind
-            type: background
+            type: host
             spec:
-              container:
-                image: docker:dind
-                privileged: true
-              mount:
-                - name: dockersock
-                  path: /var/run
+              path: /var/run/docker.sock
+        steps:
           - name: build-and-test
             type: run
             spec:
               container: mcr.microsoft.com/dotnet/sdk:10.0
-              envs:
-                DOCKER_HOST: unix:///var/run/docker.sock
               mount:
                 - name: dockersock
-                  path: /var/run
+                  path: /var/run/docker.sock
               script: |
                 cd dotnet
                 dotnet restore Manager.Vsa.sln
