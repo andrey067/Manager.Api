@@ -13,7 +13,7 @@ Layout sob `python/src/`:
 | `database/` | engine/session, modelos SQLAlchemy, Alembic |
 | `authentication/` | JWT, contexto de usuário, hasher Argon2 |
 
-Pacotes legados (`domain/`, `application/`, `infrastructure/`, `api/`) existem só até o cutover — não adicionar código novo lá.
+Código de aplicação fica em `features/`, `common/`, `database/`, `authentication/` e `app/` — pacotes em camadas legados foram removidos no cutover (Task 17).
 
 ## Checklist obrigatório
 

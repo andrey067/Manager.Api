@@ -21,7 +21,7 @@ Single project **`Manager.Api`** (`src/Manager.Api/`):
 | `Database/` | `ApplicationDbContext`, `Configurations/`, migrations |
 | `Authentication/` | JWT, `IUserContext`, Argon2 |
 
-Use **`Manager.Vsa.sln`** for all VSA work. Legacy layered projects (`1 - Manager.API` … `5 - Manager.Core`) remain until cutover — do not add new code there.
+Open **`Manager.Vsa.sln`** — it contains only **`Manager.Api`** and **`Manager.Vsa.Tests`** (layered projects were removed in Task 17 cutover).
 
 ## Stack
 

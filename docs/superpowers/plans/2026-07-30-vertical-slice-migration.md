@@ -4,8 +4,10 @@
 
 **Goal:** Migrate `dotnet/` and `python/` Manager API from Clean Architecture layers to Vertical Slice Architecture with feature parity, Result/Problem Details, direct DbContext/Session, domain events, HybridCache, and updated docs/agents.
 
-**Architecture:** Greenfield VSA shells (`dotnet/src/Manager.Api`, `python/src/{features,common,database,authentication}`) run alongside legacy code until cutover. One use case = one file/module. Port each slice in **both stacks before the next slice**. Spec: `docs/superpowers/specs/2026-07-30-vertical-slice-migration-design.md`.
+**Architecture:** VSA in `dotnet/src/Manager.Api` and `python/src/{features,common,database,authentication}` (cutover complete — legacy layered code removed in Task 17). One use case = one file/module. Port each slice in **both stacks before the next slice**. Spec: `docs/superpowers/specs/2026-07-30-vertical-slice-migration-design.md`.
 
+
+**Migration status:** Task 17 cutover **complete** (2026-07-30). Legacy layered trees are gone; `dotnet/Manager.Vsa.sln` has only `Manager.Api` + `Manager.Vsa.Tests`. The steps below are the historical execution record.
 **Tech Stack:** .NET 10, Minimal APIs, EF Core + Npgsql, FluentValidation, Scrutor, HybridCache, JWT + Argon2 (EscNet), xUnit + Testcontainers. Python 3.12+, FastAPI, SQLAlchemy async + asyncpg, Alembic, PyJWT, argon2-cffi, Pydantic, pytest + aiosqlite/Postgres fixtures. uv/poe for Python.
 
 ## Global Constraints
@@ -18,7 +20,7 @@
 - Handlers never return domain entities — project to slice `Response`.
 - No cross-feature imports of Command/Query/Handler/Validator/Endpoint.
 - TDD: failing test → implement → pass → commit per task.
-- Legacy projects under `dotnet/src/1 - Manager.API` … `5 - Manager.Core` and Python `domain`/`application`/`infrastructure`/`api` stay until Task 17 (cutover).
+- ~~Legacy layered projects~~ **Removed in Task 17** — do not reintroduce layer projects or repository abstractions.
 
 ### Locked HTTP routes
 
@@ -90,7 +92,7 @@ tests/Manager.Vsa.Tests/
   Infrastructure/CustomWebApplicationFactory.cs, PostgresCollection.cs
 ```
 
-### Python — create under `python/src/` (new packages; old remain until cutover)
+### Python — create under `python/src/` (historical; cutover complete)
 
 ```
 common/

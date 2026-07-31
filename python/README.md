@@ -21,7 +21,7 @@ Layout under `python/src/`:
 | `database/` | SQLAlchemy engine/session, models, Alembic |
 | `authentication/` | JWT, user context, Argon2 hasher |
 
-Legacy packages (`domain/`, `application/`, `infrastructure/`, `api/`) remain until cutover.
+Application code lives under `features/`, `common/`, `database/`, `authentication/`, and `app/` (legacy layered packages were removed in Task 17 cutover).
 
 ## Stack
 

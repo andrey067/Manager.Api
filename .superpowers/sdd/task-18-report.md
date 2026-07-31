@@ -36,7 +36,7 @@ Result: **`valid: true`**, 0 errors (6 files).
 
 - Legacy `dotnet-clean-architecture` skill removed; agents now point to `/dotnet-vertical-slice`.
 - `docs/architecture/` was untracked in branch — first commit of LikeC4 VSA models in this task.
-- README run/migration paths assume VSA cutover (`Manager.Vsa.sln`, `src/Manager.Api`); legacy projects still exist until Task 17.
+- Cutover (Task 17) complete; agent/README text updated to match (Task 18 follow-up).
 
 ## Self-Review
 
@@ -48,3 +48,25 @@ Result: **`valid: true`**, 0 errors (6 files).
 | LikeC4 Features/Common/Database/Authentication | Yes |
 | README Problem Details + locked routes | Yes |
 | LikeC4 validate | Pass |
+
+---
+
+## Follow-up: cutover doc accuracy (Task 18)
+
+**Date:** 2026-07-30
+
+Removed stale “until cutover” / legacy path notes now that Task 17 removed layered trees.
+
+| File | Change |
+|------|--------|
+| `dotnet/AGENTS.md` | `Manager.Vsa.sln` = `Manager.Api` + `Manager.Vsa.Tests` only |
+| `dotnet/README.md` | Same; no `1 - Manager.API` … `5 - Manager.Core` |
+| `python/AGENTS.md` | VSA paths only; legacy packages removed |
+| `python/README.md` | Same |
+| `docs/superpowers/plans/2026-07-30-vertical-slice-migration.md` | Migration status banner + architecture/constraints wording |
+
+### Commit
+
+| SHA | Subject |
+|-----|---------|
+| `d951445` | `docs: remove stale legacy cutover notes after Task 17` |

@@ -13,7 +13,7 @@ Projeto único **`Manager.Api`** (`dotnet/src/Manager.Api/`):
 | `Database/` | `ApplicationDbContext`, `Configurations/`, migrations |
 | `Authentication/` | JWT, `IUserContext`, hash Argon2 |
 
-Solução VSA: **`Manager.Vsa.sln`**. Projetos legados em `src/1 - Manager.API` … `5 - Manager.Core` existem só até o cutover — não adicionar código novo lá.
+Solução: **`Manager.Vsa.sln`** — apenas **`Manager.Api`** (`src/Manager.Api/`) e **`Manager.Vsa.Tests`** (`tests/Manager.Vsa.Tests/`). O cutover (Task 17) removeu os projetos em camadas legados.
 
 ## Checklist obrigatório
 
