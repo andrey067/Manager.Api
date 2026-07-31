@@ -12,8 +12,9 @@ Layout sob `python/src/`:
 | `common/` | `Result`, protocolos de messaging, Problem Details, `Clock` |
 | `database/` | engine/session, modelos SQLAlchemy, Alembic |
 | `authentication/` | JWT, contexto de usuário, hasher Argon2 |
+| `authorization/` | Helpers de política de acesso (ex.: `admin_resource_access`) |
 
-Código de aplicação fica em `features/`, `common/`, `database/`, `authentication/` e `app/` — pacotes em camadas legados foram removidos no cutover (Task 17).
+Código de aplicação fica em `features/`, `common/`, `database/`, `authentication/`, `authorization/` e `app/` — pacotes em camadas legados foram removidos no cutover (Task 17).
 
 ## Checklist obrigatório
 
@@ -25,6 +26,10 @@ Código de aplicação fica em `features/`, `common/`, `database/`, `authenticat
 6. **Tempo**: `Clock` / provider compartilhado — nunca `datetime.now(UTC)` em handlers.
 7. **Isolamento**: não importar handler/validator/rota de outra feature; só tipos de domínio compartilhados.
 8. **Descoberta**: registry único de módulos de feature — sem wiring manual por endpoint.
+
+## Segurança — Users (admin CRUD)
+
+A feature **users** é gerenciamento administrativo de recursos: rotas exigem JWT (`get_current_subject`), mas handlers **não** filtram linhas pelo subject do token. O contexto de usuário existe para recursos futuros com ownership e para claims; hoje não escopa linhas de User. Ver `authorization/admin_resource_access`.
 
 ## Stack
 

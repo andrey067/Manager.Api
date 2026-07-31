@@ -32,12 +32,12 @@ Review the given scope (default: `git diff` + untracked files) against this temp
 
 ### Validation & security
 - Every command has a nested FluentValidation `Validator` (or Pydantic/command validator in Python); handlers don't re-check input shape (but do enforce business rules). Queries have no validator.
-- Handlers acting on user-owned data enforce ownership: filter by `IUserContext.UserId` or return `UserErrors.Unauthorized()`.
+- Handlers acting on **user-owned** data enforce ownership: filter by `IUserContext.UserId` or return `UserErrors.Unauthorized()`. **Exception (Manager API):** the `Users` feature is admin-managed (`Authorization/AdminResourceAccess`); JWT via `.RequireAuthorization()` / `get_current_subject` is enough — do **not** require `UserId == route id`.
 - Endpoints implement `IEndpoint`, call `.RequireAuthorization()` (or `.HasPermission(...)`) and `.WithTags(Tags.X)`, and contain only request→command mapping plus result matching — no business logic.
 - No `DateTime.UtcNow` / `DateTime.Now` / `datetime.now(UTC)` in handlers — use `IDateTimeProvider` / `Clock`.
 
 ### State changes & caching
-- Commands that mutate state raise a domain event via `entity.Raise(new XDomainEvent(id))` before `SaveChangesAsync` / commit.
+- Commands that mutate state raise a domain event via `entity.Raise(...)` / `raise_event(...)`. For **existing** aggregates (Update/Remove/Login/Refresh), Raise **before** `SaveChangesAsync` / commit. For **Create/Bootstrap** with database-generated `long`/`int` Ids, Save/commit first to assign Id, then Raise with the persisted Id (before cache invalidation / return). Documented intentional — do not invent Guids solely to Raise earlier.
 - Any `HybridCache`-cached read has matching invalidation (`cache.RemoveAsync`) in every command that mutates that data; keys come from the `{Feature}CacheKeys` class.
 
 ### Tests

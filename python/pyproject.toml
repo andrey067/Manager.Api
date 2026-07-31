@@ -31,10 +31,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/app", "src/authentication", "src/common", "src/database", "src/features"]
+packages = ["src/app", "src/authentication", "src/authorization", "src/common", "src/database", "src/features"]
 
 [tool.hatch.build.targets.sdist]
-packages = ["src/app", "src/authentication", "src/common", "src/database", "src/features"]
+packages = ["src/app", "src/authentication", "src/authorization", "src/common", "src/database", "src/features"]
 
 # ========== Dependências de desenvolvimento ==========
 [dependency-groups]
@@ -62,6 +62,7 @@ addopts = [
     "--ignore-glob=**/._*",
     "--cov=app",
     "--cov=authentication",
+    "--cov=authorization",
     "--cov=common",
     "--cov=database",
     "--cov=features",
@@ -73,7 +74,7 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true
-source_pkgs = ["app", "authentication", "common", "database", "features"]
+source_pkgs = ["app", "authentication", "authorization", "common", "database", "features"]
 omit = ["*/alembic/*", "*/scripts/*"]
 
 [tool.coverage.paths]

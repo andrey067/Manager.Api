@@ -12,6 +12,7 @@ Projeto único **`Manager.Api`** (`dotnet/src/Manager.Api/`):
 | `Common/` | `Result`, messaging (`ICommandHandler`/`IQueryHandler`), `CustomResults`, `IDateTimeProvider` |
 | `Database/` | `ApplicationDbContext`, `Configurations/`, migrations |
 | `Authentication/` | JWT, `IUserContext`, hash Argon2 |
+| `Authorization/` | Helpers de política de acesso (ex.: `AdminResourceAccess`) |
 
 Solução: **`Manager.Vsa.sln`** — apenas **`Manager.Api`** (`src/Manager.Api/`) e **`Manager.Vsa.Tests`** (`tests/Manager.Vsa.Tests/`). O cutover (Task 17) removeu os projetos em camadas legados.
 
@@ -26,6 +27,10 @@ Solução: **`Manager.Vsa.sln`** — apenas **`Manager.Api`** (`src/Manager.Api/
 7. **Tempo**: `IDateTimeProvider` — nunca `DateTime.UtcNow` em handlers.
 8. **Isolamento**: não importar Command/Query/Handler/Validator/Endpoint de outra feature; só tipos de domínio compartilhados (entidade, errors, events).
 9. **DI**: Scrutor + `AddValidatorsFromAssembly(includeInternalTypes: true)` + `AddEndpoints` — sem registro manual por slice.
+
+## Segurança — Users (admin CRUD)
+
+A feature **Users** é gerenciamento administrativo de recursos: endpoints exigem JWT (`.RequireAuthorization()`), mas handlers **não** filtram linhas por `IUserContext.UserId`. `IUserContext` existe para recursos futuros com ownership e para claims; hoje não escopa linhas de User. Ver `Authorization/AdminResourceAccess`.
 
 ## Skills .NET
 
