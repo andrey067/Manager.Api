@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,10 +60,10 @@ async def test_handler_success_persists_refresh_token_hash(
     assert result.is_success
     assert result.value.access_token
     assert result.value.refresh_token
-    from datetime import timedelta
+    expected_refresh_expires = fixed_clock.utc_now() + timedelta(days=7)
 
     assert result.value.access_token_expires == fixed_clock.utc_now() + timedelta(hours=1)
-    assert result.value.refresh_token_expires == fixed_clock.utc_now() + timedelta(days=7)
+    assert result.value.refresh_token_expires == expected_refresh_expires
 
     row = (
         await vsa_session.execute(
@@ -71,7 +73,7 @@ async def test_handler_success_persists_refresh_token_hash(
     assert row.refresh_token_hash == token_service.hash_refresh_token(
         result.value.refresh_token
     )
-    assert row.refresh_token_expires_at is not None
+    assert row.refresh_token_expires_at == expected_refresh_expires.replace(tzinfo=None)
 
 
 def test_validator_rejects_empty_login() -> None:

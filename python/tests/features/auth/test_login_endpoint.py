@@ -39,6 +39,29 @@ async def login_client(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("login", "password"),
+    [
+        ("", "password"),
+        ("user@example.com", ""),
+    ],
+)
+async def test_post_login_empty_login_or_password_returns_validation_error(
+    login_client: AsyncClient,
+    login: str,
+    password: str,
+) -> None:
+    response = await login_client.post(
+        "/api/v1/auth/login",
+        json={"login": login, "password": password},
+    )
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["errorCode"] == "Validation.Error"
+
+
+@pytest.mark.asyncio
 async def test_post_login_invalid_credentials_returns_problem(
     login_client: AsyncClient,
 ) -> None:

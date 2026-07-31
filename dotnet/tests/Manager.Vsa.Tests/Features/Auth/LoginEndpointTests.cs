@@ -14,6 +14,23 @@ public class LoginEndpointTests(CustomWebApplicationFactory factory) : IClassFix
 {
     private readonly HttpClient _client = factory.CreateClient();
 
+    [Theory]
+    [InlineData("", "password")]
+    [InlineData("user@example.com", "")]
+    public async Task PostLogin_EmptyLoginOrPassword_ReturnsValidationError(
+        string login,
+        string password)
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/auth/login",
+            new { login, password });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("errorCode").GetString().Should().Be("Validation.Error");
+    }
+
     [Fact]
     public async Task PostLogin_InvalidCredentials_ReturnsProblemDetails()
     {

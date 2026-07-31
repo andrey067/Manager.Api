@@ -68,6 +68,7 @@ public static class Login
                         var result = await handler.Handle(command, cancellationToken);
                         return result.Match(Results.Ok, CustomResults.Problem);
                     })
+                .AddEndpointFilter<ValidationEndpointFilter<Command>>()
                 .AllowAnonymous()
                 .WithTags(Tags.Auth);
     }
