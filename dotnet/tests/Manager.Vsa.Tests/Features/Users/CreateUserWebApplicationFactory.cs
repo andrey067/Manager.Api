@@ -1,6 +1,7 @@
 using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,10 @@ namespace Manager.Vsa.Tests.Features.Users;
 
 public sealed class CreateUserWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private readonly string _databaseName = Guid.NewGuid().ToString();
+    private readonly string _connectionString;
+
+    public CreateUserWebApplicationFactory(PostgresFixture postgres) =>
+        _connectionString = postgres.ConnectionString;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -26,7 +30,7 @@ public sealed class CreateUserWebApplicationFactory : WebApplicationFactory<Prog
                 ["Jwt:Key"] = "test-signing-key-32-chars-minimum!!",
                 ["Jwt:Issuer"] = "Manager.Api",
                 ["Jwt:Audience"] = "Manager.Api",
-                ["ConnectionStrings:ManagerAPIPostgres"] = "Host=localhost;Database=unused;Username=unused;Password=unused"
+                ["ConnectionStrings:ManagerAPIPostgres"] = _connectionString
             });
         });
 
@@ -36,7 +40,7 @@ public sealed class CreateUserWebApplicationFactory : WebApplicationFactory<Prog
             services.RemoveAll<ApplicationDbContext>();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase(_databaseName));
+                options.UseNpgsql(_connectionString));
         });
     }
 
@@ -62,7 +66,6 @@ public sealed class CreateUserWebApplicationFactory : WebApplicationFactory<Prog
         }
 
         await cache.RemoveAsync(UserCacheKeys.All);
-        await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
+        await db.Users.ExecuteDeleteAsync();
     }
 }

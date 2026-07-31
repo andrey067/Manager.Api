@@ -6,16 +6,24 @@ using FluentAssertions;
 using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Users;
 
-[Collection("CreateUser")]
-public class SearchUsersByEmailEndpointTests(CreateUserWebApplicationFactory factory) : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public class SearchUsersByEmailEndpointTests : IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly CreateUserWebApplicationFactory _factory;
+    private readonly HttpClient _client;
 
-    public async Task InitializeAsync() => await factory.ResetStateAsync();
+    public SearchUsersByEmailEndpointTests(PostgresFixture postgres)
+    {
+        _factory = new CreateUserWebApplicationFactory(postgres);
+        _client = _factory.CreateClient();
+    }
+
+    public async Task InitializeAsync() => await _factory.ResetStateAsync();
 
     public Task DisposeAsync() => Task.CompletedTask;
 
@@ -35,7 +43,7 @@ public class SearchUsersByEmailEndpointTests(CreateUserWebApplicationFactory fac
         var adminId = await SeedUserAsync($"one@{domain}", "User One", "Password1!");
         await SeedUserAsync($"two@{domain.ToUpperInvariant()}", "User Two");
         await SeedUserAsync("other@test.com", "Other");
-        var token = factory.IssueToken(adminId, $"one@{domain}");
+        var token = _factory.IssueToken(adminId, $"one@{domain}");
 
         var response = await SearchUsersByEmailAsync(token, domain);
 
@@ -50,7 +58,7 @@ public class SearchUsersByEmailEndpointTests(CreateUserWebApplicationFactory fac
     public async Task SearchUsersByEmail_WithJwt_ReturnsEmptyList_WhenNoMatch()
     {
         var adminId = await SeedUserAsync("admin@example.com", "Admin", "Password1!");
-        var token = factory.IssueToken(adminId, "admin@example.com");
+        var token = _factory.IssueToken(adminId, "admin@example.com");
 
         var response = await SearchUsersByEmailAsync(token, "none@example.com");
 
@@ -73,7 +81,7 @@ public class SearchUsersByEmailEndpointTests(CreateUserWebApplicationFactory fac
         string name = "Admin User",
         string password = "Password1!")
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var user = User.Create(name, email, hasher.Hash(password));

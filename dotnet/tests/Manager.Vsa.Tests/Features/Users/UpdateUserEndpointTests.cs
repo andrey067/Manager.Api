@@ -6,17 +6,25 @@ using FluentAssertions;
 using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Users;
 
-[Collection("UpdateUser")]
-public class UpdateUserEndpointTests(CreateUserWebApplicationFactory factory) : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public class UpdateUserEndpointTests : IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly CreateUserWebApplicationFactory _factory;
+    private readonly HttpClient _client;
 
-    public async Task InitializeAsync() => await factory.ResetStateAsync();
+    public UpdateUserEndpointTests(PostgresFixture postgres)
+    {
+        _factory = new CreateUserWebApplicationFactory(postgres);
+        _client = _factory.CreateClient();
+    }
+
+    public async Task InitializeAsync() => await _factory.ResetStateAsync();
 
     public Task DisposeAsync() => Task.CompletedTask;
 
@@ -150,7 +158,7 @@ public class UpdateUserEndpointTests(CreateUserWebApplicationFactory factory) : 
         string name = "Admin User",
         string password = "Password1!")
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var user = User.Create(name, email, hasher.Hash(password));

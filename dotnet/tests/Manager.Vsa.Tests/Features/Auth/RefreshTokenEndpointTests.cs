@@ -6,13 +6,32 @@ using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
 using Manager.Vsa.Tests.Health;
+using Manager.Vsa.Tests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Auth;
 
-public class RefreshTokenEndpointTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+[Collection(PostgresCollection.Name)]
+public class RefreshTokenEndpointTests : IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public RefreshTokenEndpointTests(PostgresFixture postgres)
+    {
+        _factory = new CustomWebApplicationFactory(postgres);
+        _client = _factory.CreateClient();
+    }
+
+    public async Task InitializeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Users.ExecuteDeleteAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task PostRefresh_EmptyRefreshToken_ReturnsValidationError()
@@ -62,7 +81,7 @@ public class RefreshTokenEndpointTests(CustomWebApplicationFactory factory) : IC
 
     private async Task SeedUserWithRefreshTokenAsync(string refreshToken)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var tokens = scope.ServiceProvider.GetRequiredService<ITokenService>();
         var user = User.Create("Test User", "refresh@example.com", "hash");

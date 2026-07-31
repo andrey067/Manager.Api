@@ -6,13 +6,32 @@ using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
 using Manager.Vsa.Tests.Health;
+using Manager.Vsa.Tests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Auth;
 
-public class LoginEndpointTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+[Collection(PostgresCollection.Name)]
+public class LoginEndpointTests : IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public LoginEndpointTests(PostgresFixture postgres)
+    {
+        _factory = new CustomWebApplicationFactory(postgres);
+        _client = _factory.CreateClient();
+    }
+
+    public async Task InitializeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Users.ExecuteDeleteAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory]
     [InlineData("", "password")]
@@ -64,7 +83,7 @@ public class LoginEndpointTests(CustomWebApplicationFactory factory) : IClassFix
 
     private async Task SeedUserAsync(string email, string password)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         db.Users.Add(User.Create("Test User", email, hasher.Hash(password)));

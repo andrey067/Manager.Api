@@ -2,12 +2,20 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using Manager.Vsa.Tests.Infrastructure;
 
 namespace Manager.Vsa.Tests.Health;
 
-public class HealthEndpointTests(CustomWebApplicationFactory factory) : IClassFixture<CustomWebApplicationFactory>
+[Collection(PostgresCollection.Name)]
+public class HealthEndpointTests
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client;
+
+    public HealthEndpointTests(PostgresFixture postgres)
+    {
+        var factory = new CustomWebApplicationFactory(postgres);
+        _client = factory.CreateClient();
+    }
 
     [Fact]
     public async Task GetHealth_ReturnsOkWithStatus()

@@ -1,4 +1,5 @@
 using Manager.Api.Database;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,10 @@ namespace Manager.Vsa.Tests.Features.Users;
 
 public sealed class RegisterBootstrapWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private readonly string _databaseName = Guid.NewGuid().ToString();
+    private readonly string _connectionString;
+
+    public RegisterBootstrapWebApplicationFactory(PostgresFixture postgres) =>
+        _connectionString = postgres.ConnectionString;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -21,7 +25,7 @@ public sealed class RegisterBootstrapWebApplicationFactory : WebApplicationFacto
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Jwt:Key"] = "test-signing-key-32-chars-minimum!!",
-                ["ConnectionStrings:ManagerAPIPostgres"] = "Host=localhost;Database=unused;Username=unused;Password=unused"
+                ["ConnectionStrings:ManagerAPIPostgres"] = _connectionString
             });
         });
 
@@ -31,7 +35,7 @@ public sealed class RegisterBootstrapWebApplicationFactory : WebApplicationFacto
             services.RemoveAll<ApplicationDbContext>();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase(_databaseName));
+                options.UseNpgsql(_connectionString));
         });
     }
 }

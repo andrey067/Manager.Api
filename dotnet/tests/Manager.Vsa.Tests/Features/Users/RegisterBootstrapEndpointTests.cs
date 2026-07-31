@@ -5,15 +5,27 @@ using FluentAssertions;
 using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Users;
 
-[Collection("RegisterBootstrap")]
-public class RegisterBootstrapEndpointTests(RegisterBootstrapWebApplicationFactory factory)
+[Collection(PostgresCollection.Name)]
+public class RegisterBootstrapEndpointTests : IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly RegisterBootstrapWebApplicationFactory _factory;
+    private readonly HttpClient _client;
+
+    public RegisterBootstrapEndpointTests(PostgresFixture postgres)
+    {
+        _factory = new RegisterBootstrapWebApplicationFactory(postgres);
+        _client = _factory.CreateClient();
+    }
+
+    public async Task InitializeAsync() => await ClearUsersAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task PostBootstrap_InvalidName_ReturnsValidationError()
@@ -62,7 +74,7 @@ public class RegisterBootstrapEndpointTests(RegisterBootstrapWebApplicationFacto
 
     private async Task SeedUserAsync(string email)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         db.Users.Add(User.Create("Existing User", email, hasher.Hash("Password1!")));
@@ -71,9 +83,8 @@ public class RegisterBootstrapEndpointTests(RegisterBootstrapWebApplicationFacto
 
     private async Task ClearUsersAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Users.RemoveRange(await db.Users.ToListAsync());
-        await db.SaveChangesAsync();
+        await db.Users.ExecuteDeleteAsync();
     }
 }

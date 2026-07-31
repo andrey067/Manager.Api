@@ -158,7 +158,7 @@ cd dotnet
 dotnet test Manager.Vsa.sln
 ```
 
-Integration tests use EF Core InMemory (no Docker required).
+HTTP integration tests (`*EndpointTests`, `WebApplicationFactory`) use Testcontainers PostgreSQL and require a local Docker API (`unix:///var/run/docker.sock` or `tcp://`). Handler unit tests still use EF Core InMemory.
 
 ## Project structure
 

@@ -6,16 +6,24 @@ using FluentAssertions;
 using Manager.Api.Authentication;
 using Manager.Api.Database;
 using Manager.Api.Features.Users;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Manager.Vsa.Tests.Features.Users;
 
-[Collection("CreateUser")]
-public class GetAllUsersEndpointTests(CreateUserWebApplicationFactory factory) : IAsyncLifetime
+[Collection(PostgresCollection.Name)]
+public class GetAllUsersEndpointTests : IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly CreateUserWebApplicationFactory _factory;
+    private readonly HttpClient _client;
 
-    public async Task InitializeAsync() => await factory.ResetStateAsync();
+    public GetAllUsersEndpointTests(PostgresFixture postgres)
+    {
+        _factory = new CreateUserWebApplicationFactory(postgres);
+        _client = _factory.CreateClient();
+    }
+
+    public async Task InitializeAsync() => await _factory.ResetStateAsync();
 
     public Task DisposeAsync() => Task.CompletedTask;
 
@@ -32,7 +40,7 @@ public class GetAllUsersEndpointTests(CreateUserWebApplicationFactory factory) :
     {
         var adminId = await SeedUserAsync("admin@example.com", "Admin User", "Password1!");
         await SeedUserAsync("other@example.com", "Other User");
-        var token = factory.IssueToken(adminId, "admin@example.com");
+        var token = _factory.IssueToken(adminId, "admin@example.com");
 
         var response = await GetUsersAsync(token);
 
@@ -47,7 +55,7 @@ public class GetAllUsersEndpointTests(CreateUserWebApplicationFactory factory) :
     public async Task GetUsers_AfterCreateUser_IncludesNewUser()
     {
         var adminId = await SeedUserAsync("getall-cache-admin@example.com", "Admin User", "Password1!");
-        var token = factory.IssueToken(adminId, "getall-cache-admin@example.com");
+        var token = _factory.IssueToken(adminId, "getall-cache-admin@example.com");
         var newEmail = $"created-{Guid.NewGuid():N}@example.com";
 
         var before = await GetUsersAsync(token);
@@ -95,7 +103,7 @@ public class GetAllUsersEndpointTests(CreateUserWebApplicationFactory factory) :
         string name = "Admin User",
         string password = "Password1!")
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var user = User.Create(name, email, hasher.Hash(password));

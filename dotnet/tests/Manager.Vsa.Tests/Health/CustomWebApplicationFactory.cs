@@ -1,4 +1,5 @@
 using Manager.Api.Database;
+using Manager.Vsa.Tests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,11 @@ namespace Manager.Vsa.Tests.Health;
 
 public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _connectionString;
+
+    public CustomWebApplicationFactory(PostgresFixture postgres) =>
+        _connectionString = postgres.ConnectionString;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -19,7 +25,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Jwt:Key"] = "test-signing-key-32-chars-minimum!!",
-                ["ConnectionStrings:ManagerAPIPostgres"] = "Host=localhost;Database=unused;Username=unused;Password=unused"
+                ["ConnectionStrings:ManagerAPIPostgres"] = _connectionString
             });
         });
 
@@ -29,7 +35,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll<ApplicationDbContext>();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("ManagerVsaHealthTests"));
+                options.UseNpgsql(_connectionString));
         });
     }
 }
