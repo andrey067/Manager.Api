@@ -29,13 +29,12 @@ Open **`Manager.Vsa.sln`** — it contains only **`Manager.Api`** and **`Manager
 - Entity Framework Core 10 + PostgreSQL (Npgsql)
 - FluentValidation, Scrutor, HybridCache
 - JWT Bearer + Argon2 (EscNet)
-- xUnit, FluentAssertions, Testcontainers, Coverlet
+- xUnit, FluentAssertions, Coverlet
 
 ## Requirements
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- PostgreSQL 14+ (or Docker for Testcontainers during tests)
-- Docker (for integration tests)
+- PostgreSQL 14+ (runtime and migrations)
 
 ## Install
 
@@ -94,7 +93,7 @@ dotnet run --project "src/Manager.Api/Manager.Api.csproj"
 |------|------|
 | `Users.NotFound` | User id/email not found |
 | `Users.EmailConflict` | Duplicate email on create/update |
-| `Users.Validation` | Business validation failure |
+| `Validation.Error` | Request/command validation failure |
 | `Users.BootstrapNotAllowed` | Bootstrap when users already exist |
 | `Auth.InvalidCredentials` | Login email/password mismatch |
 | `Auth.InvalidRefreshToken` | Missing, expired, or unknown refresh token |
@@ -123,13 +122,13 @@ POST /api/v1/users/bootstrap
 { "name": "Admin", "email": "admin@example.com", "password": "Secret1!" }
 ```
 
-Returns `403` Problem Details (`Users.BootstrapNotAllowed`) once any user exists.
+Returns `400` Problem Details (`Users.BootstrapNotAllowed`) once any user exists.
 
 ### Login
 
 ```http
 POST /api/v1/auth/login
-{ "email": "admin@example.com", "password": "Secret1!" }
+{ "login": "admin@example.com", "password": "Secret1!" }
 ```
 
 ### Refresh
@@ -159,7 +158,7 @@ cd dotnet
 dotnet test Manager.Vsa.sln
 ```
 
-Integration tests use Testcontainers PostgreSQL when Docker is available.
+Integration tests use EF Core InMemory (no Docker required).
 
 ## Project structure
 
@@ -187,7 +186,7 @@ dotnet/
 |---------|-----|
 | Startup throws about `Jwt:Key` | Set User Secret / env var (≥ 32 chars) |
 | `401` on user routes | Login and send `Authorization: Bearer …` |
-| `403` on bootstrap | First user already exists — use login + `POST /api/v1/users` |
+| `400` with `Users.BootstrapNotAllowed` on bootstrap | First user already exists — use login + `POST /api/v1/users` |
 | Problem Details `Users.EmailConflict` | Choose a different email |
 
 ---

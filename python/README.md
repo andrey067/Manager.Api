@@ -92,7 +92,7 @@ poe run
 |------|------|
 | `Users.NotFound` | User id/email not found |
 | `Users.EmailConflict` | Duplicate email |
-| `Users.Validation` | Business validation failure |
+| `Validation.Error` | Request/command validation failure |
 | `Users.BootstrapNotAllowed` | Bootstrap when users exist |
 | `Auth.InvalidCredentials` | Login failure |
 | `Auth.InvalidRefreshToken` | Refresh failure |
@@ -126,7 +126,7 @@ curl -X POST http://localhost:8000/api/v1/users/bootstrap \
 
 ```http
 POST /api/v1/auth/login
-{ "email": "admin@example.com", "password": "..." }
+{ "login": "admin@example.com", "password": "..." }
 
 POST /api/v1/auth/refresh
 { "refreshToken": "..." }
@@ -175,7 +175,7 @@ python/
 | Symptom | Fix |
 |---------|-----|
 | Missing `DATABASE_URL` / `JWT_SECRET` | Copy `.env.example` → `.env` |
-| Bootstrap returns 403 | User already exists |
+| Bootstrap returns 400 (`Users.BootstrapNotAllowed`) | User already exists |
 | `401` on user routes | Send Bearer token from login |
 
 ---

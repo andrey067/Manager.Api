@@ -12,6 +12,9 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (!builder.Environment.IsEnvironment("Testing"))
+    ValidateJwtKey(builder.Configuration);
+
 builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddHybridCache();
 
@@ -56,6 +59,14 @@ app.MapEndpoints();
 
 app.Run();
 
+static void ValidateJwtKey(IConfiguration configuration)
+{
+    var secretKey = configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < 32)
+        throw new InvalidOperationException(
+            "Jwt:Key must be configured with at least 32 characters via User Secrets or environment variables.");
+}
+
 static void AddJwt(IServiceCollection services, IConfiguration configuration)
 {
     services.AddAuthentication(options =>
@@ -68,7 +79,7 @@ static void AddJwt(IServiceCollection services, IConfiguration configuration)
     services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
         .Configure<IConfiguration>((options, config) =>
         {
-            var secretKey = config["Jwt:Key"] ?? "DEV_ONLY_REPLACE_WITH_USER_SECRETS_KEY_32+";
+            var secretKey = config["Jwt:Key"]!;
             var keyBytes = Encoding.UTF8.GetBytes(secretKey);
             var issuer = config["Jwt:Issuer"];
             var audience = config["Jwt:Audience"];
