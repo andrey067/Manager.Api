@@ -43,12 +43,15 @@ public static class CreateUser
     {
         public async Task<Result<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            if (await db.Users.AnyAsync(u => u.Email == command.Email, cancellationToken))
+            var name = command.Name.Trim();
+            var email = command.Email.Trim();
+
+            if (await db.Users.AnyAsync(u => u.Email == email, cancellationToken))
                 return Result.Failure<Response>(UserErrors.EmailConflict());
 
             var user = User.Create(
-                command.Name,
-                command.Email,
+                name,
+                email,
                 hasher.Hash(command.Password));
 
             db.Users.Add(user);
@@ -56,7 +59,7 @@ public static class CreateUser
 
             user.Raise(new UserCreatedDomainEvent(user.Id));
             await cache.RemoveAsync(UserCacheKeys.All, cancellationToken);
-            await cache.RemoveAsync(UserCacheKeys.ByEmail(command.Email), cancellationToken);
+            await cache.RemoveAsync(UserCacheKeys.ByEmail(email), cancellationToken);
 
             return Result.Success(new Response(user.Id, user.Name, user.Email));
         }

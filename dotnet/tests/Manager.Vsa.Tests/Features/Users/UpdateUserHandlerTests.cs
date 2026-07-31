@@ -61,6 +61,24 @@ public class UpdateUserHandlerTests
     }
 
     [Fact]
+    public async Task Handle_TrimsNameAndEmail()
+    {
+        var (handler, db, _) = await CreateSut();
+        var hasher = new TestPasswordHasher();
+        db.Users.Add(User.Create("Old Name", "old@example.com", hasher.Hash("Password1!")));
+        await db.SaveChangesAsync();
+        var target = await db.Users.SingleAsync();
+
+        var result = await handler.Handle(
+            new UpdateUser.Command(target.Id, "  New Name  ", "  new@example.com  ", "Password1!"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await db.Users.SingleAsync()).Email.Should().Be("new@example.com");
+        (await db.Users.SingleAsync()).Name.Should().Be("New Name");
+    }
+
+    [Fact]
     public async Task Handle_Success_UpdatesUserRaisesEventAndInvalidatesCache()
     {
         var (handler, db, cache) = await CreateSut();

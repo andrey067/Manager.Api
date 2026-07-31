@@ -46,9 +46,12 @@ public static class RegisterBootstrap
             if (await db.Users.AnyAsync(cancellationToken))
                 return Result.Failure<Response>(UserErrors.BootstrapNotAllowed());
 
+            var name = command.Name.Trim();
+            var email = command.Email.Trim();
+
             var user = User.Create(
-                command.Name,
-                command.Email,
+                name,
+                email,
                 hasher.Hash(command.Password));
 
             db.Users.Add(user);

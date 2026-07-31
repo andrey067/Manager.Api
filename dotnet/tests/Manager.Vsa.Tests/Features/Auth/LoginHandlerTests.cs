@@ -69,6 +69,22 @@ public class LoginHandlerTests
     }
 
     [Fact]
+    public async Task Handle_TrimsLogin()
+    {
+        var (handler, db, _, _) = CreateSut();
+        var hasher = new TestPasswordHasher();
+        const string password = "Secret123!";
+        db.Users.Add(User.Create("Test User", "user@example.com", hasher.Hash(password)));
+        await db.SaveChangesAsync();
+
+        var result = await handler.Handle(
+            new Login.Command("  user@example.com  ", password),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Handle_Success_PersistsRefreshTokenHash()
     {
         var clock = new FixedDateTimeProvider();

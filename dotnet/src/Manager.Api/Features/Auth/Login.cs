@@ -35,8 +35,10 @@ public static class Login
     {
         public async Task<Result<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var login = command.Login.Trim();
+
             var user = await db.Users
-                .FirstOrDefaultAsync(u => u.Email == command.Login, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Email == login, cancellationToken);
 
             if (user is null || !hasher.Verify(command.Password, user.Password))
                 return Result.Failure<Response>(AuthErrors.InvalidCredentials());

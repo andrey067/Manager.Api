@@ -44,6 +44,20 @@ public class CreateUserHandlerTests
     }
 
     [Fact]
+    public async Task Handle_TrimsNameAndEmail()
+    {
+        var (handler, db, _) = await CreateSut();
+
+        var result = await handler.Handle(
+            new CreateUser.Command("  Ada  ", "  ada@example.com  ", "Password1!"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await db.Users.SingleAsync()).Email.Should().Be("ada@example.com");
+        (await db.Users.SingleAsync()).Name.Should().Be("Ada");
+    }
+
+    [Fact]
     public async Task Handle_Success_CreatesUserRaisesEventAndInvalidatesCache()
     {
         var (handler, db, cache) = await CreateSut();

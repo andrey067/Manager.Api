@@ -44,6 +44,20 @@ public class RegisterBootstrapHandlerTests
     }
 
     [Fact]
+    public async Task Handle_TrimsNameAndEmail()
+    {
+        var (handler, db, _) = await CreateSut();
+
+        var result = await handler.Handle(
+            new RegisterBootstrap.Command("  Admin  ", "  admin@example.com  ", "Password1!"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await db.Users.SingleAsync()).Email.Should().Be("admin@example.com");
+        (await db.Users.SingleAsync()).Name.Should().Be("Admin");
+    }
+
+    [Fact]
     public async Task Handle_Success_CreatesUserRaisesEventAndInvalidatesCache()
     {
         var (handler, db, cache) = await CreateSut();

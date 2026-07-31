@@ -60,6 +60,9 @@ public static class UpdateUser
     {
         public async Task<Result<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var name = command.Name.Trim();
+            var email = command.Email.Trim();
+
             var user = await db.Users
                 .SingleOrDefaultAsync(u => u.Id == command.Id, cancellationToken);
 
@@ -67,14 +70,14 @@ public static class UpdateUser
                 return Result.Failure<Response>(UserErrors.NotFound());
 
             if (await db.Users.AnyAsync(
-                    u => u.Email == command.Email && u.Id != command.Id,
+                    u => u.Email == email && u.Id != command.Id,
                     cancellationToken))
                 return Result.Failure<Response>(UserErrors.EmailConflict());
 
             var oldEmail = user.Email;
 
-            user.SetName(command.Name);
-            user.SetEmail(command.Email);
+            user.SetName(name);
+            user.SetEmail(email);
 
             if (!hasher.Verify(command.Password, user.Password))
                 user.SetPassword(hasher.Hash(command.Password));
@@ -84,7 +87,7 @@ public static class UpdateUser
 
             await cache.RemoveAsync(UserCacheKeys.ById(user.Id), cancellationToken);
             await cache.RemoveAsync(UserCacheKeys.ByEmail(oldEmail), cancellationToken);
-            await cache.RemoveAsync(UserCacheKeys.ByEmail(command.Email), cancellationToken);
+            await cache.RemoveAsync(UserCacheKeys.ByEmail(email), cancellationToken);
             await cache.RemoveAsync(UserCacheKeys.All, cancellationToken);
 
             return Result.Success(new Response(user.Id, user.Name, user.Email));
