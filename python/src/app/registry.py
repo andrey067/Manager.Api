@@ -8,6 +8,7 @@ from features.auth.login import router as login_router
 from features.auth.refresh_token import router as refresh_token_router
 from features.users.create_user import router as create_user_router
 from features.users.register_bootstrap import router as register_bootstrap_router
+from features.users.update_user import router as update_user_router
 
 
 def register_routes(app: FastAPI) -> None:
@@ -15,3 +16,4 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(refresh_token_router)
     app.include_router(register_bootstrap_router)
     app.include_router(create_user_router)
+    app.include_router(update_user_router)
