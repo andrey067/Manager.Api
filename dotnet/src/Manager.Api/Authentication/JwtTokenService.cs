@@ -17,8 +17,8 @@ public sealed class JwtTokenService(IConfiguration configuration, IDateTimeProvi
         {
             Subject = new ClaimsIdentity(
             [
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Email, email),
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, email),
                 new Claim(ClaimTypes.Role, "User")
             ]),
             NotBefore = now,
@@ -87,7 +87,8 @@ public sealed class JwtTokenService(IConfiguration configuration, IDateTimeProvi
                 },
                 out _);
 
-            var idClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var idClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return idClaim is not null && long.TryParse(idClaim, out userId);
         }
         catch (SecurityTokenException)
