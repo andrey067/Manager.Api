@@ -1,0 +1,57 @@
+/**
+ * Context-level model: persons, software systems, external PostgreSQL.
+ * There is NO frontend — consumers are API clients / developers.
+ */
+model {
+  apiClient = person "API Client" {
+    description """
+      HTTP client (curl, Postman, integration tests, or another service)
+      that calls the Manager REST API with JSON and Bearer JWT.
+    """
+  }
+
+  developer = person "Developer" {
+    description """
+      Engineer exploring or extending the learning project.
+      Runs either stack locally, reads Swagger/OpenAPI, and executes tests.
+    """
+  }
+
+  managerDotnet = system "Manager API (.NET)" {
+    #learning
+    description """
+      ASP.NET Core Minimal API implementation of User CRUD + JWT auth.
+      Vertical Slice Architecture in a single `Manager.Api` deployable.
+    """
+    technology ".NET 10"
+  }
+
+  managerPython = system "Manager API (Python)" {
+    #learning
+    description """
+      FastAPI implementation of the same User CRUD + JWT auth contract.
+      Vertical Slice Architecture with async SQLAlchemy; single Uvicorn process.
+    """
+    technology "Python 3.12+"
+  }
+
+  postgres = system "PostgreSQL" {
+    #external
+    description """
+      Shared relational database engine. Each stack uses its own database
+      (e.g. `manager_api_dotnet` / `manager_api_python`) on the same server.
+    """
+    technology "PostgreSQL"
+    style {
+      shape storage
+      color secondary
+    }
+  }
+
+  apiClient -[http]-> managerDotnet "REST / JWT"
+  apiClient -[http]-> managerPython "REST / JWT"
+  developer -[http]-> managerDotnet "runs & explores"
+  developer -[http]-> managerPython "runs & explores"
+  managerDotnet -[sql]-> postgres "EF Core / Npgsql"
+  managerPython -[sql]-> postgres "SQLAlchemy async / asyncpg"
+}

@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- Coverlet: threshold enforced on Manager.Vsa.Tests -->
+  <PropertyGroup Condition="'$(CollectCoverage)' == 'true'">
+    <CoverletOutputFormat>cobertura,json,opencover</CoverletOutputFormat>
+    <CoverletOutput>$(MSBuildThisFileDirectory)TestResults/coverage/</CoverletOutput>
+    <MergeWith>$(MSBuildThisFileDirectory)TestResults/coverage/coverage.json</MergeWith>
+    <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+    <ExcludeByFile>**/Migrations/**/*.cs,**/Program.cs</ExcludeByFile>
+    <Exclude>[*.Tests]*,[xunit.*]*</Exclude>
+    <Include>[Manager.Api]*</Include>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CollectCoverage)' == 'true' AND '$(MSBuildProjectName)' == 'Manager.Vsa.Tests'">
+    <Threshold>90</Threshold>
+    <ThresholdType>line,branch,method</ThresholdType>
+    <ThresholdStat>total</ThresholdStat>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

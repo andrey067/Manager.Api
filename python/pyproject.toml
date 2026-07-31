@@ -1,0 +1,141 @@
+# ========== Metadados (PEP 621) ==========
+[project]
+name = "manager-api"
+version = "0.1.0"
+description = "Manager API - Vertical Slice Architecture com FastAPI"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "argon2-cffi",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic[email]",
+    "email-validator",
+    "python-dotenv",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg",
+    "psycopg2-binary",
+    "alembic",
+    "pyjwt",
+    "httpx",
+    "aiosqlite",
+]
+
+# ========== uv ==========
+[tool.uv]
+package = true
+
+# ========== Build ==========
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/app", "src/authentication", "src/authorization", "src/common", "src/database", "src/features"]
+
+[tool.hatch.build.targets.sdist]
+packages = ["src/app", "src/authentication", "src/authorization", "src/common", "src/database", "src/features"]
+
+# ========== Dependências de desenvolvimento ==========
+[dependency-groups]
+dev = [
+    "poethepoet",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "aiosqlite",
+    "faker",
+    "ruff",
+    "mypy",
+    "types-PyJWT",
+]
+
+# ========== Pytest ==========
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--ignore-glob=**/._*",
+    "--cov=app",
+    "--cov=authentication",
+    "--cov=authorization",
+    "--cov=common",
+    "--cov=database",
+    "--cov=features",
+    "--cov-branch",
+    "--cov-report=term-missing",
+    "--cov-fail-under=90",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+source_pkgs = ["app", "authentication", "authorization", "common", "database", "features"]
+omit = ["*/alembic/*", "*/scripts/*"]
+
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/site-packages/",
+]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",
+]
+
+# ========== Pyright ==========
+[tool.pyright]
+extraPaths = ["src"]
+venvPath = "."
+venv = ".venv"
+
+# ========== Ruff ==========
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+exclude = ["**/._*", ".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "authentication", "common", "database", "features"]
+
+# ========== Mypy ==========
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+explicit_package_bases = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["testcontainers.*", "argon2.*"]
+ignore_missing_imports = true
+
+# ========== Poe ==========
+[tool.poe.tasks]
+run = "uv run uvicorn app.main:app --reload --app-dir src"
+test = "uv run python -m pytest tests -v --tb=short"
+lint = "ruff check src tests"
+lint-fix = "ruff check src tests --fix"
+format = "ruff format src tests"
+format-check = "ruff format --check src tests"
+typecheck = "mypy src"
+check = "poe lint && poe typecheck"
+migrate = "uv run alembic upgrade head"
+migrate-gen = "uv run alembic revision --autogenerate -m"
+seed = "uv run python scripts/seed_admin.py"

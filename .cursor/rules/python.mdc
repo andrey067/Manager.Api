@@ -1,0 +1,17 @@
+---
+description: Padrões Python para o projeto. Aplica-se ao trabalhar em python/ ou arquivos .py.
+globs: python/**/*.py, src/**/*.py
+alwaysApply: false
+---
+
+# Padrões Python (VSA)
+
+Quando trabalhar em `python/` ou arquivos `.py`:
+
+- Vertical Slice Architecture: `features/`, `common/`, `database/`, `authentication/`
+- Um módulo por caso de uso em `features/{entity}/`
+- Handlers usam `AsyncSession` direto — sem repositórios
+- `Result` + Problem Details (sem envelope `ResultSchema`); códigos `{Feature}.{Reason}`
+- FastAPI com registry de features; type hints obrigatórios (ruff, mypy, pyright)
+- Pydantic para request/response do slice; `Clock` em handlers; eventos + invalidação de cache em mutações
+- Estrutura src layout e `pyproject.toml` conforme template (uv, poe)
