@@ -1,0 +1,18 @@
+---
+description: Padrões .NET para o projeto Manager API. Aplica-se ao trabalhar em dotnet/ ou arquivos .cs.
+globs: dotnet/**/*.cs
+alwaysApply: false
+---
+
+# Padrões .NET (VSA)
+
+Quando trabalhar em `dotnet/`:
+
+- Vertical Slice Architecture em projeto único `Manager.Api` (`Manager.Vsa.sln`)
+- Um arquivo por caso de uso em `Features/{Entity}/` (Command/Query, Validator, Handler, Endpoint, Response aninhados)
+- Handlers com `ICommandHandler`/`IQueryHandler` custom — sem MediatR
+- `ApplicationDbContext` concreto nos handlers — sem repositórios
+- `Result` + Problem Details com códigos `{Feature}.{Reason}`; `CustomResults.Problem` nos endpoints
+- FluentValidation nos comandos; `IDateTimeProvider`; domain events + invalidação HybridCache em mutações
+- Descoberta via Scrutor, `AddValidatorsFromAssembly`, `AddEndpoints`
+- Central Package Management em `Directory.Packages.props`

@@ -1,34 +1,35 @@
 # Manager API (.NET)
 
-REST API for user CRUD with JWT authentication, built with **ASP.NET Core Minimal API**, Clean Architecture, and EF Core on PostgreSQL.
+REST API for user CRUD with JWT authentication, built with **ASP.NET Core Minimal API**, **Vertical Slice Architecture**, and EF Core on PostgreSQL.
 
 ## Overview
 
 - User management (create, read, update, delete, search)
 - Login against the `User` table (email/password) with **Argon2** verification
 - JWT access tokens + rotating refresh tokens (hash stored in DB)
-- Domain validation via FluentValidation + MediatR notifications
-- Health check at `/health`
+- FluentValidation per command slice; domain events on mutations
+- Health check at `GET /health`
 
-## Architecture
+## Architecture (VSA)
 
-| Layer | Project | Responsibility |
-|-------|---------|----------------|
-| API | `1 - Manager.API` | Minimal API endpoints (`Features/`), JWT, Swagger, DI |
-| Domain | `2 - Manager.Domain` | Entities, FluentValidation |
-| Services | `3 - Manager.Services` | Application services / use cases |
-| Infra | `4 - Manager.Infra` | EF Core, repositories, migrations |
-| Core | `5 - Manager.Core` | MediatR notifications, `Optional<T>`, shared messages |
+Single project **`Manager.Api`** (`src/Manager.Api/`):
 
-Vertical slices live under `Features/Auth` and `Features/Users`.
+| Folder | Responsibility |
+|--------|----------------|
+| `Features/{Entity}/` | One file per use case + entity, `{Entity}Errors`, `{Entity}CacheKeys`, domain events |
+| `Common/` | `Result`, messaging handlers, `CustomResults`, `IDateTimeProvider` |
+| `Database/` | `ApplicationDbContext`, `Configurations/`, migrations |
+| `Authentication/` | JWT, `IUserContext`, Argon2 |
+
+Use **`Manager.Vsa.sln`** for all VSA work. Legacy layered projects (`1 - Manager.API` … `5 - Manager.Core`) remain until cutover — do not add new code there.
 
 ## Stack
 
 - .NET 10 / ASP.NET Core Minimal API
 - Entity Framework Core 10 + PostgreSQL (Npgsql)
-- MediatR, Mapster, FluentValidation
-- JWT Bearer + Argon2 (EscNet / Isopoh)
-- xUnit, Moq, FluentAssertions, Testcontainers, Coverlet
+- FluentValidation, Scrutor, HybridCache
+- JWT Bearer + Argon2 (EscNet)
+- xUnit, FluentAssertions, Testcontainers, Coverlet
 
 ## Requirements
 
@@ -40,8 +41,8 @@ Vertical slices live under `Features/Auth` and `Features/Users`.
 
 ```bash
 cd dotnet
-dotnet restore Manager.sln
-dotnet build Manager.sln
+dotnet restore Manager.Vsa.sln
+dotnet build Manager.Vsa.sln
 ```
 
 ## Configuration (no secrets in git)
@@ -51,7 +52,7 @@ dotnet build Manager.sln
 ### User Secrets (recommended for local)
 
 ```bash
-cd "src/1 - Manager.API"
+cd src/Manager.Api
 dotnet user-secrets set "ConnectionStrings:ManagerAPIPostgres" "Host=localhost;Port=5432;Database=manager_api;Username=postgres;Password=YOUR_PASSWORD"
 dotnet user-secrets set "Jwt:Key" "REPLACE_WITH_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS"
 dotnet user-secrets set "Jwt:Issuer" "Manager.API"
@@ -71,10 +72,7 @@ dotnet user-secrets set "Hash:Salt" "REPLACE_WITH_RANDOM_SALT"
 | `Jwt__Audience` | Optional JWT audience |
 | `Jwt__HoursToExpire` | Access token lifetime in hours (default `1`) |
 | `Jwt__RefreshDaysToExpire` | Refresh token lifetime in days (default `7`) |
-| `Hash__Salt` | Optional Argon2 salt; if empty, a secure random salt is generated at startup |
-| `Hash__TimeCost` / `Hash__MemoryCost` / `Hash__Lanes` / `Hash__HashLength` | Argon2 tuning |
-
-Production can also use Azure Key Vault (`AzureKeyVault:Vault`, `ClientId`, `ClientSecret`) when those values are present.
+| `Hash__Salt` | Optional Argon2 salt |
 
 ## Run
 
@@ -86,20 +84,46 @@ dotnet run --project "src/Manager.Api/Manager.Api.csproj"
 - Swagger UI: `/swagger`
 - Health: `GET /health`
 
-## Authentication
+## HTTP contract
+
+**Success:** typed JSON from the slice `Response` (e.g. `Login.Response` with `AccessToken`, `AccessTokenExpires`, `RefreshToken`, `RefreshTokenExpires`) or `204 No Content`.
+
+**Failure:** Problem Details (`application/problem+json`) with extension `code` set to `"{Feature}.{Reason}"`:
+
+| Code | When |
+|------|------|
+| `Users.NotFound` | User id/email not found |
+| `Users.EmailConflict` | Duplicate email on create/update |
+| `Users.Validation` | Business validation failure |
+| `Users.BootstrapNotAllowed` | Bootstrap when users already exist |
+| `Auth.InvalidCredentials` | Login email/password mismatch |
+| `Auth.InvalidRefreshToken` | Missing, expired, or unknown refresh token |
+
+### Routes
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/health` | — |
+| POST | `/api/v1/auth/login` | anonymous |
+| POST | `/api/v1/auth/refresh` | anonymous (refresh token body) |
+| POST | `/api/v1/users/bootstrap` | anonymous (empty users table only) |
+| POST | `/api/v1/users` | JWT |
+| PUT | `/api/v1/users/{id}` | JWT |
+| DELETE | `/api/v1/users/{id}` | JWT |
+| GET | `/api/v1/users/{id}` | JWT |
+| GET | `/api/v1/users` | JWT |
+| GET | `/api/v1/users/by-email?email=` | JWT |
+| GET | `/api/v1/users/search-by-name?name=` | JWT |
+| GET | `/api/v1/users/search-by-email?email=` | JWT |
 
 ### Bootstrap (first user)
 
-There is a chicken-and-egg problem: CRUD requires JWT, but you need a user to login.
-
-**Solution:** `POST /api/v1/users/register` is **anonymous** and succeeds **only when the users table is empty**. After the first user exists, it returns `403`.
-
 ```http
-POST /api/v1/users/register
+POST /api/v1/users/bootstrap
 { "name": "Admin", "email": "admin@example.com", "password": "Secret1!" }
 ```
 
-Then login and use Bearer tokens for all `/api/v1/users/*` routes (except register).
+Returns `403` Problem Details (`Users.BootstrapNotAllowed`) once any user exists.
 
 ### Login
 
@@ -108,8 +132,6 @@ POST /api/v1/auth/login
 { "email": "admin@example.com", "password": "Secret1!" }
 ```
 
-Response includes `token` (JWT), `refreshToken`, and expiry timestamps. Password checks use Argon2 **Verify** against the stored hash (not static config credentials).
-
 ### Refresh
 
 ```http
@@ -117,93 +139,56 @@ POST /api/v1/auth/refresh
 { "refreshToken": "..." }
 ```
 
-Issues a new access token and rotates the refresh token (SHA-256 hash stored on `User`).
-
 ### Protected routes
 
-All `/api/v1/users/*` endpoints except `/register` use `.RequireAuthorization()`. Send:
-
-```http
-Authorization: Bearer {access_token}
-```
+Send `Authorization: Bearer {accessToken}` on all `/api/v1/users/*` routes except bootstrap.
 
 ## Migrations
 
 ```bash
 cd dotnet
 dotnet ef database update \
-  --project "src/4 - Manager.Infra/Manager.Infra.csproj" \
-  --startup-project "src/1 - Manager.API/Manager.API.csproj"
+  --project "src/Manager.Api/Manager.Api.csproj" \
+  --startup-project "src/Manager.Api/Manager.Api.csproj"
 ```
 
-Create a new migration:
-
-```bash
-dotnet ef migrations add MigrationName \
-  --project "src/4 - Manager.Infra/Manager.Infra.csproj" \
-  --startup-project "src/1 - Manager.API/Manager.API.csproj" \
-  --output-dir Migrations
-```
-
-Email has a **unique index** (`IX_User_Email`).
-
-## Tests & coverage
+## Tests
 
 ```bash
 cd dotnet
-# Preferred: sequential merge so Coverlet aggregates across projects
-bash scripts/test-with-coverage.sh
+dotnet test Manager.Vsa.sln
 ```
 
-Or:
-
-```bash
-dotnet test Manager.sln /p:CollectCoverage=true
-```
-
-Coverage is merged across test projects. **Manager.API.Tests** enforces a **90%** threshold on the merged total for **line, branch, and method** (fails the build if below).
-
-Integration tests prefer **Testcontainers PostgreSQL** when Docker is available; otherwise they fall back to **EF InMemory** so the suite still runs.
+Integration tests use Testcontainers PostgreSQL when Docker is available.
 
 ## Project structure
 
 ```
 dotnet/
-  src/
-    1 - Manager.API/          Features/, Token/, Extensions/, ViewModels/
-    2 - Manager.Domain/       Entities/, Validators/
-    3 - Manager.Services/     Services/, DTO/, Interfaces/
-    4 - Manager.Infra/        Context/, Repositories/, Mappings/, Migrations/
-    5 - Manager.Core/         Communication/, Structs/, Enum/
-  tests/
-    Manager.*.Tests/
-    Manager.Fixtures/
-    Manager.IntegrationBase/
+  src/Manager.Api/
+    Features/       Users/, Auth/ — one .cs file per slice
+    Common/         Result, Messaging, CustomResults
+    Database/       ApplicationDbContext, Configurations/
+    Authentication/ JWT, IUserContext, Argon2
+  tests/Manager.Vsa.Tests/
+  Manager.Vsa.sln
 ```
 
 ## Conventions
 
-- Prefer interfaces (`IUserService`, `ITokenService`, `IUserRepository`) in endpoints and services
-- Mapster for ViewModel ↔ DTO ↔ Entity
-- Domain notifications via MediatR; same scoped `DomainNotificationHandler` instance for handlers and endpoints
-- DataAnnotations validation filter on Minimal API endpoints
-- `DbContext` lifetime: **Scoped** (never Transient)
-- No secrets in source control (see `.gitignore`)
+- One use case = one file; handlers use concrete `ApplicationDbContext` (no repositories)
+- `result.Match(success, CustomResults.Problem)` in endpoints
+- `IDateTimeProvider` in handlers; domain events + HybridCache invalidation on mutations
+- Run `/vsa-review` before committing slice changes
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
 | Startup throws about `Jwt:Key` | Set User Secret / env var (≥ 32 chars) |
-| Startup throws about connection string | Configure `ConnectionStrings:ManagerAPIPostgres` |
 | `401` on user routes | Login and send `Authorization: Bearer …` |
-| `403` on `/users/register` | First user already exists — use login + `/users/create` |
-| Integration tests fail | Ensure Docker is running (Testcontainers) |
-| Coverage below 90% | Run full `dotnet test` with CollectCoverage and add tests for uncovered paths |
-
-## References
-
-Originally based on [Lucas Eschechola’s series](https://www.youtube.com/playlist?list=PLdhhExru1TXcTTm-Mpfg2tN5B_rOTNvzy), updated for .NET 10, Minimal API, and production-readiness hardening.
+| `403` on bootstrap | First user already exists — use login + `POST /api/v1/users` |
+| Problem Details `Users.EmailConflict` | Choose a different email |
 
 ---
 

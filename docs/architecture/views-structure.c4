@@ -1,0 +1,96 @@
+/**
+ * Structural views: context, containers, components.
+ */
+views {
+  view index {
+    title "Manager API — Index"
+    description "Start here. No frontend exists; API Client / Developer consume the APIs."
+    include *
+    exclude managerDotnet.**
+    exclude managerPython.**
+    style apiClient, developer {
+      color primary
+    }
+    style postgres {
+      color secondary
+    }
+  }
+
+  view context {
+    title "System Context"
+    description """
+      Two alternative implementations of the same domain (User CRUD + JWT).
+      Both talk to PostgreSQL. There is no UI app in this repository.
+    """
+    include
+      apiClient,
+      developer,
+      managerDotnet,
+      managerPython,
+      postgres
+    include apiClient -> managerDotnet
+    include apiClient -> managerPython
+    include developer -> managerDotnet
+    include developer -> managerPython
+    include managerDotnet -> postgres
+    include managerPython -> postgres
+    autoLayout TopBottom
+  }
+
+  view containers-dotnet of managerDotnet {
+    title ".NET — Containers"
+    description "ASP.NET Core host process + PostgreSQL database for the .NET stack."
+    include *
+    include -> managerDotnet ->
+    include managerDotnet.webApi -> postgres
+    autoLayout LeftRight
+  }
+
+  view containers-python of managerPython {
+    title "Python — Containers"
+    description "FastAPI/Uvicorn host process + PostgreSQL database for the Python stack."
+    include *
+    include -> managerPython ->
+    include managerPython.webApi -> postgres
+    autoLayout LeftRight
+  }
+
+  view containers-overview {
+    title "Containers — Both Stacks"
+    description "Side-by-side deployable units. Stacks are alternatives, not a distributed pair."
+    include
+      apiClient,
+      managerDotnet.webApi,
+      managerDotnet.database,
+      managerPython.webApi,
+      managerPython.database,
+      postgres
+    include apiClient -> managerDotnet.webApi
+    include apiClient -> managerPython.webApi
+    include managerDotnet.webApi -> managerDotnet.database
+    include managerPython.webApi -> managerPython.database
+    include managerDotnet.webApi -> postgres
+    include managerPython.webApi -> postgres
+    autoLayout TopBottom
+  }
+
+  view components-dotnet of managerDotnet.webApi {
+    title ".NET — Components (VSA)"
+    description """
+      Vertical slices inside the ASP.NET Core process: Features, Common, Database, Authentication.
+    """
+    include *
+    include managerDotnet.webApi -> managerDotnet.database
+    autoLayout TopBottom
+  }
+
+  view components-python of managerPython.webApi {
+    title "Python — Components (VSA)"
+    description """
+      Vertical slices inside the FastAPI process: features, common, database, authentication.
+    """
+    include *
+    include managerPython.webApi -> managerPython.database
+    autoLayout TopBottom
+  }
+}
