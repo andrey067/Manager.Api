@@ -45,9 +45,7 @@ async def test_post_bootstrap_invalid_name_returns_validation_error(
         json={"name": "A", "email": "user@example.com", "password": "Password1!"},
     )
 
-    assert response.status_code == 400
-    body = response.json()
-    assert body["errorCode"] == "Validation.Error"
+    assert response.status_code == 422
 
 
 @pytest.mark.asyncio

@@ -10,7 +10,10 @@ from database.models import UserModel
 from features.users.cache_keys import UserCacheKeys
 from features.users.entity import User
 from features.users.events import UserUpdatedDomainEvent
-from features.users.update_user import Command, Handler, Validator
+import pytest
+from pydantic import ValidationError
+
+from features.users.update_user import Command, Handler, UpdateUserRequest
 from tests.features.conftest import seed_user
 
 
@@ -131,51 +134,45 @@ async def test_handler_success_updates_user_raises_event_and_invalidates_cache(
     ) == ["refreshed-new"]
 
 
-def test_validator_rejects_short_name() -> None:
-    errors = Validator().validate(
-        Command(id=1, name="A", email="user@example.com", password="Password1!")
-    )
-    assert any(e.field == "name" for e in errors)
+def test_update_user_request_rejects_short_name() -> None:
+    with pytest.raises(ValidationError):
+        UpdateUserRequest(name="A", email="a@b.com", password="Password1!")
 
 
-def test_validator_rejects_long_name() -> None:
-    errors = Validator().validate(
-        Command(id=1, name="a" * 81, email="user@example.com", password="Password1!")
-    )
-    assert any(e.field == "name" for e in errors)
+def test_update_user_request_rejects_long_name() -> None:
+    with pytest.raises(ValidationError):
+        UpdateUserRequest(name="a" * 81, email="user@example.com", password="Password1!")
 
 
-def test_validator_rejects_invalid_email() -> None:
-    errors = Validator().validate(
-        Command(id=1, name="Valid Name", email="not-email", password="Password1!")
-    )
-    assert any(e.field == "email" for e in errors)
+def test_update_user_request_rejects_invalid_email() -> None:
+    with pytest.raises(ValidationError):
+        UpdateUserRequest(name="Valid Name", email="not-email", password="Password1!")
 
 
-def test_validator_rejects_long_email() -> None:
+def test_update_user_request_rejects_long_email() -> None:
     local = "a" * 170
-    errors = Validator().validate(
-        Command(id=1, name="Valid Name", email=f"{local}@example.com", password="Password1!")
+    with pytest.raises(ValidationError):
+        UpdateUserRequest(
+            name="Valid Name", email=f"{local}@example.com", password="Password1!"
+        )
+
+
+def test_update_user_request_rejects_short_password() -> None:
+    with pytest.raises(ValidationError):
+        UpdateUserRequest(name="Valid Name", email="user@example.com", password="short")
+
+
+def test_update_user_request_rejects_long_password() -> None:
+    with pytest.raises(ValidationError):
+        UpdateUserRequest(
+            name="Valid Name", email="user@example.com", password="a" * 31
+        )
+
+
+def test_update_user_request_accepts_valid_payload() -> None:
+    request = UpdateUserRequest(
+        name="Valid Name", email="user@example.com", password="Password1!"
     )
-    assert any(e.field == "email" for e in errors)
-
-
-def test_validator_rejects_short_password() -> None:
-    errors = Validator().validate(
-        Command(id=1, name="Valid Name", email="user@example.com", password="short")
-    )
-    assert any(e.field == "password" for e in errors)
-
-
-def test_validator_rejects_long_password() -> None:
-    errors = Validator().validate(
-        Command(id=1, name="Valid Name", email="user@example.com", password="a" * 31)
-    )
-    assert any(e.field == "password" for e in errors)
-
-
-def test_validator_accepts_valid_command() -> None:
-    errors = Validator().validate(
-        Command(id=1, name="Valid Name", email="user@example.com", password="Password1!")
-    )
-    assert errors == []
+    assert request.name == "Valid Name"
+    assert request.email == "user@example.com"
+    assert request.password == "Password1!"

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,11 +24,6 @@ from features.users.events import UserUpdatedDomainEvent
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
-_EMAIL_PATTERN = re.compile(
-    r"^([\w\-.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))"
-    r"([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$"
-)
-
 
 @dataclass(frozen=True, slots=True)
 class Command:
@@ -46,43 +40,15 @@ class Response:
     email: str
 
 
-@dataclass(frozen=True, slots=True)
-class ValidationError:
-    field: str
-    message: str
-
-
-class Validator:
-    def validate(self, command: Command) -> list[ValidationError]:
-        errors: list[ValidationError] = []
-
-        name = command.name.strip()
-        if len(name) < 2:
-            errors.append(ValidationError("name", "Name must be at least 2 characters."))
-        elif len(name) > 80:
-            errors.append(ValidationError("name", "Name must be at most 80 characters."))
-
-        email = command.email.strip()
-        if not email:
-            errors.append(ValidationError("email", "Email is required."))
-        elif len(email) > 180:
-            errors.append(ValidationError("email", "Email must be at most 180 characters."))
-        elif not _EMAIL_PATTERN.match(email):
-            errors.append(ValidationError("email", "Email is not valid."))
-
-        password = command.password
-        if len(password) < 8:
-            errors.append(ValidationError("password", "Password must be at least 8 characters."))
-        elif len(password) > 30:
-            errors.append(ValidationError("password", "Password must be at most 30 characters."))
-
-        return errors
-
-
 class UpdateUserRequest(BaseModel):
-    name: str
-    email: str
-    password: str
+    name: str = Field(min_length=2, max_length=80)
+    email: EmailStr = Field(max_length=180)
+    password: str = Field(min_length=8, max_length=30)
+
+    @field_validator("name", "email", mode="before")
+    @classmethod
+    def strip_strings(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
 
 
 class UpdateUserResponse(BaseModel):
@@ -185,20 +151,7 @@ async def update_user(
         email=body.email,
         password=body.password,
     )
-    validation_errors = Validator().validate(command)
-    if validation_errors:
-        from common.error import Error
-
-        detail = "; ".join(e.message for e in validation_errors)
-        return problem_response(Error.validation("Validation.Error", detail))
-
-    normalized = Command(
-        id=command.id,
-        name=command.name.strip(),
-        email=command.email.strip(),
-        password=command.password,
-    )
-    result = await handler.handle(normalized)
+    result = await handler.handle(command)
     return result.match(
         on_success=lambda value: UpdateUserResponse(
             id=value.id,
