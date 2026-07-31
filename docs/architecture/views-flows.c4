@@ -1,0 +1,186 @@
+/**
+ * Dynamic views — VSA flows (User + Argon2 + JWT + Problem Details).
+ */
+views {
+  dynamic view login-dotnet {
+    title "Login Flow (.NET)"
+    description """
+      POST `/api/v1/auth/login` with email/password.
+      Login slice handler: lookup User, Argon2-verify, issue access + refresh tokens.
+    """
+    variant sequence
+
+    apiClient -> managerDotnet.webApi.features "POST /api/v1/auth/login"
+    managerDotnet.webApi.features
+      -> managerDotnet.webApi.database "GetByEmail via DbContext"
+    managerDotnet.webApi.database
+      -> managerDotnet.database "SELECT user"
+    managerDotnet.webApi.database <- managerDotnet.database "row / not found"
+    managerDotnet.webApi.features
+      -> managerDotnet.webApi.authentication "Argon2 verify + JWT + refresh hash"
+
+    alt {
+      when 'user found + Argon2 verify OK' {
+        apiClient <- managerDotnet.webApi.features "200 Login.Response (tokens)"
+      }
+      else 'invalid credentials' {
+        apiClient <- managerDotnet.webApi.features "401 Problem Details Auth.InvalidCredentials"
+      }
+    }
+  }
+
+  dynamic view login-python {
+    title "Login Flow (Python)"
+    description """
+      POST `/api/v1/auth/login` with email/password.
+      login slice: AsyncSession lookup, Argon2 verify, JWT + refresh.
+    """
+    variant sequence
+
+    apiClient -> managerPython.webApi.features "POST /api/v1/auth/login"
+    managerPython.webApi.features
+      -> managerPython.webApi.database "get by email"
+    managerPython.webApi.database
+      -> managerPython.database "SELECT user"
+    managerPython.webApi.database <- managerPython.database "row / not found"
+    managerPython.webApi.features
+      -> managerPython.webApi.authentication "Argon2 verify + JWT"
+
+    alt {
+      when 'user found + Argon2 verify OK' {
+        apiClient <- managerPython.webApi.features "200 typed response (tokens)"
+      }
+      else 'invalid credentials' {
+        apiClient <- managerPython.webApi.features "401 Problem Details Auth.InvalidCredentials"
+      }
+    }
+  }
+
+  dynamic view refresh-dotnet {
+    title "Refresh Token Flow (.NET)"
+    description "POST `/api/v1/auth/refresh` — rotate access + refresh tokens."
+    variant sequence
+
+    apiClient -> managerDotnet.webApi.features "POST /api/v1/auth/refresh"
+    managerDotnet.webApi.features
+      -> managerDotnet.webApi.authentication "hash incoming refresh token"
+    managerDotnet.webApi.authentication
+      -> managerDotnet.webApi.database "lookup by refresh hash + expiry"
+    managerDotnet.webApi.database -> managerDotnet.database "SELECT user"
+
+    alt {
+      when 'valid refresh' {
+        managerDotnet.webApi.features -> managerDotnet.webApi.database "persist new hash"
+        apiClient <- managerDotnet.webApi.features "200 RefreshToken.Response"
+      }
+      else 'invalid or expired' {
+        apiClient <- managerDotnet.webApi.features "401 Problem Details Auth.InvalidRefreshToken"
+      }
+    }
+  }
+
+  dynamic view jwt-protected-dotnet {
+    title "JWT Auth / Protected Route (.NET)"
+    description """
+      Client sends `Authorization: Bearer <token>` to `/api/v1/users/*`.
+      Authentication middleware validates before the slice endpoint runs.
+    """
+    variant sequence
+
+    apiClient -> managerDotnet.webApi.authentication "Bearer JWT on /api/v1/users/..."
+
+    alt {
+      when 'token valid' {
+        managerDotnet.webApi.authentication
+          -> managerDotnet.webApi.features "authorized principal"
+        managerDotnet.webApi.features
+          -> managerDotnet.webApi.database "handler query/command"
+        managerDotnet.webApi.database
+          -> managerDotnet.database "SQL"
+        apiClient <- managerDotnet.webApi.features "200 typed Response or 204"
+      }
+      else 'missing / invalid / expired token' {
+        apiClient <- managerDotnet.webApi.authentication "401 Unauthorized"
+      }
+    }
+  }
+
+  dynamic view jwt-protected-python {
+    title "JWT Auth / Protected Route (Python)"
+    description "FastAPI Bearer dependency validates JWT before feature routes execute."
+    variant sequence
+
+    apiClient -> managerPython.webApi.authentication "Bearer JWT on /api/v1/users/..."
+
+    alt {
+      when 'token valid' {
+        managerPython.webApi.authentication
+          -> managerPython.webApi.features "authorized"
+        managerPython.webApi.features
+          -> managerPython.webApi.database "handler via session"
+        managerPython.webApi.database
+          -> managerPython.database "SQL"
+        apiClient <- managerPython.webApi.features "200 typed response or 204"
+      }
+      else 'missing / invalid / expired token' {
+        apiClient <- managerPython.webApi.authentication "401 Unauthorized"
+      }
+    }
+  }
+
+  dynamic view crud-create-dotnet {
+    title "User CRUD — Create (.NET)"
+    description "Authenticated POST `/api/v1/users`: validate → Argon2 hash → persist → domain event + cache invalidation."
+    variant sequence
+
+    apiClient -> managerDotnet.webApi.authentication "Bearer + POST /api/v1/users"
+    managerDotnet.webApi.authentication -> managerDotnet.webApi.features "authorized"
+    managerDotnet.webApi.features -> managerDotnet.webApi.common "Result + clock"
+    managerDotnet.webApi.features
+      -> managerDotnet.webApi.authentication "hash password"
+    managerDotnet.webApi.features
+      -> managerDotnet.webApi.database "CreateUser handler INSERT"
+    managerDotnet.webApi.database -> managerDotnet.database "INSERT"
+    apiClient <- managerDotnet.webApi.features "201 CreateUser.Response or Problem Details"
+  }
+
+  dynamic view crud-create-python {
+    title "User CRUD — Create (Python)"
+    description "Authenticated POST `/api/v1/users` via create_user slice."
+    variant sequence
+
+    apiClient -> managerPython.webApi.authentication "Bearer + POST /api/v1/users"
+    managerPython.webApi.authentication -> managerPython.webApi.features "authorized"
+    managerPython.webApi.features -> managerPython.webApi.common "Result + Clock"
+    managerPython.webApi.features
+      -> managerPython.webApi.authentication "hash password"
+    managerPython.webApi.features
+      -> managerPython.webApi.database "create_user handler INSERT"
+    managerPython.webApi.database -> managerPython.database "INSERT"
+    apiClient <- managerPython.webApi.features "201 response or Problem Details"
+  }
+
+  dynamic view crud-read-dotnet {
+    title "User CRUD — Read / Search (.NET)"
+    description "GET `/api/v1/users`, `/api/v1/users/{id}`, by-email, search-* — all behind JWT."
+    variant sequence
+
+    apiClient -> managerDotnet.webApi.authentication "Bearer + GET /api/v1/users/..."
+    managerDotnet.webApi.authentication -> managerDotnet.webApi.features "authorized"
+    managerDotnet.webApi.features -> managerDotnet.webApi.database "query handler SELECT"
+    managerDotnet.webApi.database -> managerDotnet.database "SELECT"
+    apiClient <- managerDotnet.webApi.features "200 slice Response"
+  }
+
+  dynamic view crud-read-python {
+    title "User CRUD — Read / Search (Python)"
+    description "GET user queries behind JWT dependency."
+    variant sequence
+
+    apiClient -> managerPython.webApi.authentication "Bearer + GET /api/v1/users/..."
+    managerPython.webApi.authentication -> managerPython.webApi.features "authorized"
+    managerPython.webApi.features -> managerPython.webApi.database "query handler SELECT"
+    managerPython.webApi.database -> managerPython.database "SELECT"
+    apiClient <- managerPython.webApi.features "200 slice response"
+  }
+}

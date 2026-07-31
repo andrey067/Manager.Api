@@ -1,0 +1,59 @@
+/**
+ * LikeC4 specification for Manager API.
+ * Target architecture: production-ready JWT auth (User + Argon2 + protected routes).
+ * No frontend — API clients are the consumers.
+ */
+specification {
+  element person {
+    notation "Person"
+    style {
+      shape person
+      color primary
+    }
+  }
+
+  element system {
+    notation "Software System"
+  }
+
+  element container {
+    notation "Container"
+    style {
+      shape rectangle
+    }
+  }
+
+  element component {
+    notation "Component"
+    style {
+      shape component
+    }
+  }
+
+  element database {
+    notation "Database"
+    style {
+      shape storage
+      color secondary
+    }
+  }
+
+  relationship sync {
+    technology "sync"
+  }
+
+  relationship http {
+    technology "HTTPS / JSON"
+    color blue
+  }
+
+  relationship sql {
+    technology "SQL"
+    line dashed
+    color secondary
+  }
+
+  tag external
+  tag target
+  tag learning
+}

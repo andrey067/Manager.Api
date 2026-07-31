@@ -1,0 +1,65 @@
+/**
+ * .NET containers and Vertical Slice Architecture components.
+ * Single deployable Manager.Api: Features + Common + Database + Authentication.
+ */
+model {
+  extend managerDotnet {
+    webApi = container "ASP.NET Core Host" {
+      description """
+        Single deployable process (`Manager.Api`). Hosts vertical-slice Minimal API endpoints,
+        JWT Bearer auth, Scrutor handler discovery, Swagger, and EF Core.
+      """
+      technology "ASP.NET Core Minimal API / .NET 10"
+
+      features = component "Features" {
+        description """
+          One file per use case under `Features/{Entity}/`.
+          Nested Command/Query, Validator, Handler, Endpoint, Response.
+          Users (CRUD, search, bootstrap) and Auth (login, refresh).
+        """
+        technology "Minimal API slices"
+      }
+
+      common = component "Common" {
+        description """
+          `Result` / `Error`, custom `ICommandHandler` / `IQueryHandler`,
+          `CustomResults.Problem`, `IDateTimeProvider`, domain event dispatch.
+        """
+        technology "Manager.Api.Common"
+      }
+
+      database = component "Database" {
+        description """
+          `ApplicationDbContext`, `IEntityTypeConfiguration<>` under Configurations/,
+          EF Core migrations. Handlers use the concrete context directly.
+        """
+        technology "EF Core 10 / Npgsql"
+      }
+
+      authentication = component "Authentication" {
+        #target
+        description """
+          JWT issuance and Bearer validation, `IUserContext`, Argon2 password hashing.
+          `RequireAuthorization()` on protected user routes.
+        """
+        technology "JwtBearer / EscNet Argon2"
+      }
+    }
+
+    database = database "PostgreSQL DB (dotnet)" {
+      description """
+        Database `manager_api_dotnet` — `Users` table (id, name, email, password hash, refresh token).
+      """
+      technology "PostgreSQL"
+    }
+
+    webApi -[sql]-> database "persist Users"
+
+    features -> common "Result, messaging, clock"
+    features -> database "handlers query/save via DbContext"
+    features -> authentication "endpoint auth + Login/Refresh handlers"
+    authentication -> database "refresh token lookup on rotate"
+  }
+
+  managerDotnet.webApi -[sql]-> postgres "via ConnectionStrings:ManagerAPIPostgres"
+}

@@ -1,0 +1,65 @@
+/**
+ * Python containers and Vertical Slice Architecture components.
+ * Single deployable FastAPI app: features + common + database + authentication.
+ */
+model {
+  extend managerPython {
+    webApi = container "FastAPI Host" {
+      description """
+        Single deployable process (Uvicorn + FastAPI). Vertical-slice modules under `features/`,
+        shared `common/`, `database/`, and `authentication/`.
+      """
+      technology "FastAPI / Uvicorn / Python 3.12+"
+
+      features = component "Features" {
+        description """
+          One module per use case under `features/{entity}/`.
+          Request/command, validator, handler, route, response model.
+          Users and Auth slices mirror the .NET contract.
+        """
+        technology "FastAPI feature modules"
+      }
+
+      common = component "Common" {
+        description """
+          `Result`, messaging protocols, Problem Details responses,
+          shared `Clock`, domain event helpers.
+        """
+        technology "common/"
+      }
+
+      database = component "Database" {
+        description """
+          SQLAlchemy async engine/session, models, Alembic migrations.
+          Handlers use `AsyncSession` directly — no repository layer.
+        """
+        technology "SQLAlchemy 2 / asyncpg"
+      }
+
+      authentication = component "Authentication" {
+        #target
+        description """
+          JWT create/validate, user context dependency, Argon2 hasher.
+          Bearer dependency on protected `/api/v1/users/*` routes.
+        """
+        technology "PyJWT / HTTPBearer / argon2-cffi"
+      }
+    }
+
+    database = database "PostgreSQL DB (python)" {
+      description """
+        Database `manager_api_python` — Users table aligned with the .NET schema.
+      """
+      technology "PostgreSQL"
+    }
+
+    webApi -[sql]-> database "persist Users"
+
+    features -> common "Result, clock, problem mapping"
+    features -> database "handlers via AsyncSession"
+    features -> authentication "route guards + login/refresh"
+    authentication -> database "refresh token lookup on rotate"
+  }
+
+  managerPython.webApi -[sql]-> postgres "via DATABASE_URL"
+}
