@@ -142,6 +142,8 @@ POST /api/v1/auth/refresh
 
 Send `Authorization: Bearer {accessToken}` on all `/api/v1/users/*` routes except bootstrap.
 
+**Authorization (Users):** JWT is required, but handlers do not scope rows to `IUserContext.UserId` — any authenticated caller may CRUD any user (admin resource management; see `Authorization/AdminResourceAccess`).
+
 ## Migrations
 
 ```bash

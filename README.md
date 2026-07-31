@@ -54,6 +54,10 @@ Cada pasta tem README próprio com pré-requisitos, configuração (banco, JWT *
 3. Faça login em `POST /api/v1/auth/login` e use o Bearer token nas rotas de usuários.
 4. Renove tokens com `POST /api/v1/auth/refresh`.
 
+Rotas de usuários exigem JWT, mas qualquer caller autenticado pode gerenciar qualquer usuário (admin CRUD — sem filtro por ownership).
+
+Integração HTTP (.NET) usa Testcontainers PostgreSQL e exige Docker local; ver [dotnet/README.md](dotnet/README.md#tests).
+
 ## Licença e referências
 
 Projeto de estudo. Referências e créditos estão nos READMEs de cada stack.

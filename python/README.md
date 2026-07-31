@@ -134,6 +134,8 @@ POST /api/v1/auth/refresh
 
 Use `Authorization: Bearer <access_token>` on protected user routes.
 
+**Authorization (users):** JWT is required, but handlers do not scope rows to the token subject — any authenticated caller may CRUD any user (admin resource management; see `authorization/admin_resource_access`).
+
 ## Tests
 
 ```bash
