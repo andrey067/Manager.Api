@@ -107,3 +107,33 @@ async def seed_user(
     await session.commit()
     await session.refresh(user)
     return user
+
+
+async def seed_user_with_refresh_token(
+    session: AsyncSession,
+    token_service: JwtTokenService,
+    *,
+    email: str = "user@example.com",
+    password: str = "hash",
+    name: str = "Test User",
+    refresh_token: str = "valid-refresh-token",
+    expires_at: datetime | None = None,
+) -> UserModel:
+    if expires_at is None:
+        expires_at = token_service.get_refresh_expiry()
+    stored_expires = (
+        expires_at.replace(tzinfo=None)
+        if expires_at.tzinfo is not None
+        else expires_at
+    )
+    user = UserModel(
+        name=name,
+        email=email,
+        password=password,
+        refresh_token_hash=token_service.hash_refresh_token(refresh_token),
+        refresh_token_expires_at=stored_expires,
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
