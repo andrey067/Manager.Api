@@ -2,12 +2,61 @@ version: 1
 kind: pipeline
 spec:
   stages:
-    - name: build
+    - name: dotnet
       type: ci
       spec:
         steps:
+          - name: restore
+            type: run
+            spec:
+              container: mcr.microsoft.com/dotnet/sdk:10.0
+              script: |
+                cd dotnet
+                dotnet restore Manager.Vsa.sln
           - name: build
             type: run
             spec:
-              container: alpine
-              script: echo "hello world"
+              container: mcr.microsoft.com/dotnet/sdk:10.0
+              script: |
+                cd dotnet
+                dotnet build Manager.Vsa.sln --no-restore
+          - name: test
+            type: run
+            spec:
+              container: mcr.microsoft.com/dotnet/sdk:10.0
+              script: |
+                cd dotnet
+                dotnet test Manager.Vsa.sln --no-build --logger "trx;LogFileName=dotnet-results.trx"
+    - name: python
+      type: ci
+      spec:
+        steps:
+          - name: install
+            type: run
+            spec:
+              container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+              script: |
+                cd python
+                uv sync --frozen
+          - name: lint
+            type: run
+            spec:
+              container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+              script: |
+                cd python
+                uv run ruff check src tests
+                uv run ruff format --check src tests
+          - name: typecheck
+            type: run
+            spec:
+              container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+              script: |
+                cd python
+                uv run mypy src
+          - name: test
+            type: run
+            spec:
+              container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+              script: |
+                cd python
+                uv run python -m pytest tests -v --tb=short
