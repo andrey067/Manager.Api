@@ -50,6 +50,24 @@ public class UpdateUserEndpointTests(CreateUserWebApplicationFactory factory) : 
     }
 
     [Fact]
+    public async Task PutUsers_EmptyName_ReturnsValidationError()
+    {
+        var target = await SeedUserAsync("target@example.com", "Target User", "Password1!");
+        await SeedUserAsync("admin@example.com", "Admin User", "Password1!");
+        var token = await LoginAsync("admin@example.com", "Password1!");
+
+        var response = await PutUsersAsync(
+            token,
+            target.Id,
+            new { name = "", email = "a@b.com", password = "Password1!" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("errorCode").GetString().Should().Be("Validation.Error");
+    }
+
+    [Fact]
     public async Task PutUsers_WithJwt_UpdatesUser()
     {
         var target = await SeedUserAsync("target@example.com", "Target User", "Password1!");

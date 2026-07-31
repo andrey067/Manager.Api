@@ -1,8 +1,10 @@
+using System.Reflection;
 using FluentValidation;
 using Manager.Api.Authentication;
 using Manager.Api.Common;
 using Manager.Api.Common.Messaging;
 using Manager.Api.Database;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -11,9 +13,22 @@ namespace Manager.Api.Features.Users;
 
 public static class UpdateUser
 {
-    public sealed record Command(long Id, string Name, string Email, string Password) : ICommand<Response>;
+    public sealed record Command(long Id, string Name, string Email, string Password) : ICommand<Response>
+    {
+        public static async ValueTask<Command?> BindAsync(HttpContext httpContext, ParameterInfo parameter)
+        {
+            if (!long.TryParse(httpContext.Request.RouteValues["id"]?.ToString(), out var id))
+                return null;
 
-    public sealed record Request(string Name, string Email, string Password);
+            var body = await httpContext.Request.ReadFromJsonAsync<Body>();
+            if (body is null)
+                return null;
+
+            return new Command(id, body.Name, body.Email, body.Password);
+        }
+
+        private sealed record Body(string Name, string Email, string Password);
+    }
 
     public sealed record Response(long Id, string Name, string Email);
 
@@ -82,25 +97,14 @@ public static class UpdateUser
             app.MapPut(
                     "/api/v1/users/{id:long}",
                     async (
-                        long id,
-                        Request request,
-                        [FromServices] IValidator<Command> validator,
+                        Command command,
                         [FromServices] ICommandHandler<Command, Response> handler,
                         CancellationToken cancellationToken) =>
                     {
-                        var command = new Command(id, request.Name, request.Email, request.Password);
-                        var validationResult = await validator.ValidateAsync(command, cancellationToken);
-                        if (!validationResult.IsValid)
-                        {
-                            var description = string.Join(
-                                "; ",
-                                validationResult.Errors.Select(e => e.ErrorMessage));
-                            return CustomResults.Problem(Error.Validation("Validation.Error", description));
-                        }
-
                         var result = await handler.Handle(command, cancellationToken);
                         return result.Match(Results.Ok, CustomResults.Problem);
                     })
+                .AddEndpointFilter<ValidationEndpointFilter<Command>>()
                 .RequireAuthorization()
                 .WithTags(Tags.Users);
     }
