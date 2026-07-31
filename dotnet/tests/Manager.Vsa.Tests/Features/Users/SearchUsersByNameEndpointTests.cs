@@ -11,9 +11,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Manager.Vsa.Tests.Features.Users;
 
 [Collection("CreateUser")]
-public class SearchUsersByNameEndpointTests(CreateUserWebApplicationFactory factory)
+public class SearchUsersByNameEndpointTests(CreateUserWebApplicationFactory factory) : IAsyncLifetime
 {
     private readonly HttpClient _client = factory.CreateClient();
+
+    public async Task InitializeAsync() => await factory.ResetStateAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task SearchUsersByName_WithoutJwt_ReturnsUnauthorized()

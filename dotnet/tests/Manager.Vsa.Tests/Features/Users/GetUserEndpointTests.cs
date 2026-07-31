@@ -11,9 +11,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Manager.Vsa.Tests.Features.Users;
 
 [Collection("CreateUser")]
-public class GetUserEndpointTests(CreateUserWebApplicationFactory factory)
+public class GetUserEndpointTests(CreateUserWebApplicationFactory factory) : IAsyncLifetime
 {
     private readonly HttpClient _client = factory.CreateClient();
+
+    public async Task InitializeAsync() => await factory.ResetStateAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GetUser_WithoutJwt_ReturnsUnauthorized()

@@ -1,8 +1,10 @@
 using Manager.Api.Authentication;
 using Manager.Api.Database;
+using Manager.Api.Features.Users;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -43,5 +45,24 @@ public sealed class CreateUserWebApplicationFactory : WebApplicationFactory<Prog
         using var scope = Services.CreateScope();
         var tokens = scope.ServiceProvider.GetRequiredService<ITokenService>();
         return tokens.CreateAccessToken(userId, email).Token;
+    }
+
+    public async Task ResetStateAsync()
+    {
+        using var scope = Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var db = sp.GetRequiredService<ApplicationDbContext>();
+        var cache = sp.GetRequiredService<HybridCache>();
+
+        var users = await db.Users.AsNoTracking().ToListAsync();
+        foreach (var user in users)
+        {
+            await cache.RemoveAsync(UserCacheKeys.ById(user.Id));
+            await cache.RemoveAsync(UserCacheKeys.ByEmail(user.Email));
+        }
+
+        await cache.RemoveAsync(UserCacheKeys.All);
+        await db.Database.EnsureDeletedAsync();
+        await db.Database.EnsureCreatedAsync();
     }
 }

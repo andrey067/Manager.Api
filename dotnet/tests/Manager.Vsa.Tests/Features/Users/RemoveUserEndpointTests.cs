@@ -12,9 +12,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Manager.Vsa.Tests.Features.Users;
 
 [Collection("RemoveUser")]
-public class RemoveUserEndpointTests(CreateUserWebApplicationFactory factory)
+public class RemoveUserEndpointTests(CreateUserWebApplicationFactory factory) : IAsyncLifetime
 {
     private readonly HttpClient _client = factory.CreateClient();
+
+    public async Task InitializeAsync() => await factory.ResetStateAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task DeleteUsers_WithoutJwt_ReturnsUnauthorized()

@@ -17,6 +17,7 @@ from common.result import Result
 from database.models import UserModel
 from database.session import get_db
 from features.users.cache_keys import UserCacheKeys
+from features.users.dependencies import get_app_cache
 from features.users.errors import UserErrors
 from features.users.entity import User
 from features.users.events import UserCreatedDomainEvent
@@ -88,16 +89,6 @@ class BootstrapResponse(BaseModel):
     id: int
     name: str
     email: str
-
-
-_app_cache: AppCache | None = None
-
-
-def get_app_cache() -> AppCache:
-    global _app_cache
-    if _app_cache is None:
-        _app_cache = AppCache()
-    return _app_cache
 
 
 class Handler:
