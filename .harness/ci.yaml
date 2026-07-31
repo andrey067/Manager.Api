@@ -6,26 +6,14 @@ spec:
       type: ci
       spec:
         steps:
-          - name: restore
+          - name: build-and-test
             type: run
             spec:
               container: mcr.microsoft.com/dotnet/sdk:10.0
               script: |
                 cd dotnet
                 dotnet restore Manager.Vsa.sln
-          - name: build
-            type: run
-            spec:
-              container: mcr.microsoft.com/dotnet/sdk:10.0
-              script: |
-                cd dotnet
                 dotnet build Manager.Vsa.sln --no-restore
-          - name: test
-            type: run
-            spec:
-              container: mcr.microsoft.com/dotnet/sdk:10.0
-              script: |
-                cd dotnet
                 dotnet test Manager.Vsa.sln --no-build --logger "trx;LogFileName=dotnet-results.trx"
     - name: python
       type: ci
