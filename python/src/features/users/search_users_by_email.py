@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
+from fastapi import Query as FastApiQuery
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,12 +45,16 @@ class Handler:
 
     async def handle(self, query: Query) -> Result[list[Response]]:
         models = (
-            await self._session.execute(
-                select(UserModel)
-                .where(func.lower(UserModel.email).contains(query.email.lower()))
-                .order_by(UserModel.id)
+            (
+                await self._session.execute(
+                    select(UserModel)
+                    .where(func.lower(UserModel.email).contains(query.email.lower()))
+                    .order_by(UserModel.id)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         users = [
             Response(id=model.id, name=model.name, email=model.email)
             for model in models
@@ -63,7 +68,7 @@ def _get_handler(session: AsyncSession = Depends(get_db)) -> Handler:
 
 @router.get("/search-by-email", response_model=None)
 async def search_users_by_email(
-    email: str = Query(...),
+    email: str = FastApiQuery(...),
     _: int = Depends(get_current_subject),
     handler: Handler = Depends(_get_handler),
 ) -> list[SearchUsersByEmailResponseItem] | object:

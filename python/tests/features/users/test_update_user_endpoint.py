@@ -50,7 +50,11 @@ async def test_put_users_without_jwt_returns_unauthorized(
 ) -> None:
     response = await update_user_client.put(
         "/api/v1/users/1",
-        json={"name": "Updated", "email": "updated@example.com", "password": "Password1!"},
+        json={
+            "name": "Updated",
+            "email": "updated@example.com",
+            "password": "Password1!",
+        },
     )
 
     assert response.status_code == 401
@@ -62,7 +66,9 @@ async def test_put_users_with_jwt_updates_user(
     vsa_session: AsyncSession,
     password_hasher: Argon2PasswordHasher,
 ) -> None:
-    target = await seed_user(vsa_session, password_hasher, email="target@example.com", name="Target")
+    target = await seed_user(
+        vsa_session, password_hasher, email="target@example.com", name="Target"
+    )
     admin = await seed_user(vsa_session, password_hasher, email="admin@example.com")
     headers = _auth_headers(admin.id, admin.email)
 
@@ -94,7 +100,11 @@ async def test_put_users_not_found_returns_not_found(
 
     response = await update_user_client.put(
         "/api/v1/users/999",
-        json={"name": "Missing", "email": "missing@example.com", "password": "Password1!"},
+        json={
+            "name": "Missing",
+            "email": "missing@example.com",
+            "password": "Password1!",
+        },
         headers=headers,
     )
 
@@ -109,8 +119,12 @@ async def test_put_users_duplicate_email_returns_email_conflict(
     vsa_session: AsyncSession,
     password_hasher: Argon2PasswordHasher,
 ) -> None:
-    target = await seed_user(vsa_session, password_hasher, email="target@example.com", name="Target")
-    await seed_user(vsa_session, password_hasher, email="existing@example.com", name="Existing")
+    target = await seed_user(
+        vsa_session, password_hasher, email="target@example.com", name="Target"
+    )
+    await seed_user(
+        vsa_session, password_hasher, email="existing@example.com", name="Existing"
+    )
     admin = await seed_user(vsa_session, password_hasher, email="admin@example.com")
     headers = _auth_headers(admin.id, admin.email)
 

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feat/vertical-slice-migration]
+  pull_request:
+
+jobs:
+  dotnet:
+    name: .NET
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dotnet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore Manager.Vsa.sln
+      - name: Build
+        run: dotnet build Manager.Vsa.sln --no-restore
+      - name: Test
+        run: dotnet test Manager.Vsa.sln --no-build --logger "trx;LogFileName=dotnet-results.trx"
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Lint
+        run: |
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+      - name: Typecheck
+        run: uv run mypy src
+      - name: Test
+        run: uv run python -m pytest tests -v --tb=short

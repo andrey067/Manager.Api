@@ -8,7 +8,8 @@ from authentication.password_hasher import Argon2PasswordHasher
 from common.cache import AppCache
 from database.models import UserModel
 from features.users.cache_keys import UserCacheKeys
-from features.users.create_user import Command as CreateUserCommand, Handler as CreateUserHandler
+from features.users.create_user import Command as CreateUserCommand
+from features.users.create_user import Handler as CreateUserHandler
 from features.users.get_all_users import Handler, Query, Response
 from tests.features.conftest import seed_user
 
@@ -19,7 +20,9 @@ async def test_handler_success_loads_from_database_and_caches(
     password_hasher: Argon2PasswordHasher,
 ) -> None:
     cache = AppCache()
-    await seed_user(vsa_session, password_hasher, email="alice@example.com", name="Alice")
+    await seed_user(
+        vsa_session, password_hasher, email="alice@example.com", name="Alice"
+    )
     await seed_user(vsa_session, password_hasher, email="bob@example.com", name="Bob")
     handler = Handler(vsa_session, cache)
 
@@ -63,7 +66,9 @@ async def test_handler_after_create_user_invalidation_refreshes_list(
     password_hasher: Argon2PasswordHasher,
 ) -> None:
     cache = AppCache()
-    await seed_user(vsa_session, password_hasher, email="existing@example.com", name="Existing")
+    await seed_user(
+        vsa_session, password_hasher, email="existing@example.com", name="Existing"
+    )
     get_all_handler = Handler(vsa_session, cache)
     create_handler = CreateUserHandler(vsa_session, password_hasher, cache)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,12 +9,9 @@ from authentication.password_hasher import Argon2PasswordHasher
 from common.cache import AppCache
 from database.models import UserModel
 from features.users.cache_keys import UserCacheKeys
+from features.users.create_user import Command, CreateUserRequest, Handler
 from features.users.entity import User
 from features.users.events import UserCreatedDomainEvent
-import pytest
-from pydantic import ValidationError
-
-from features.users.create_user import Command, CreateUserRequest, Handler
 from tests.features.conftest import seed_user
 
 
@@ -104,7 +102,9 @@ def test_create_user_request_rejects_short_name() -> None:
 
 def test_create_user_request_rejects_long_name() -> None:
     with pytest.raises(ValidationError):
-        CreateUserRequest(name="a" * 81, email="user@example.com", password="Password1!")
+        CreateUserRequest(
+            name="a" * 81, email="user@example.com", password="Password1!"
+        )
 
 
 def test_create_user_request_rejects_invalid_email() -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,9 +11,6 @@ from database.models import UserModel
 from features.users.cache_keys import UserCacheKeys
 from features.users.entity import User
 from features.users.events import UserUpdatedDomainEvent
-import pytest
-from pydantic import ValidationError
-
 from features.users.update_user import Command, Handler, UpdateUserRequest
 from tests.features.conftest import seed_user
 
@@ -25,7 +23,9 @@ async def test_handler_not_found_when_user_does_not_exist(
     handler = Handler(vsa_session, password_hasher, AppCache())
 
     result = await handler.handle(
-        Command(id=999, name="Updated", email="updated@example.com", password="Password1!")
+        Command(
+            id=999, name="Updated", email="updated@example.com", password="Password1!"
+        )
     )
 
     assert result.is_failure
@@ -37,12 +37,21 @@ async def test_handler_email_conflict_when_email_belongs_to_another_user(
     vsa_session: AsyncSession,
     password_hasher: Argon2PasswordHasher,
 ) -> None:
-    target = await seed_user(vsa_session, password_hasher, email="one@example.com", name="User One")
-    await seed_user(vsa_session, password_hasher, email="two@example.com", name="User Two")
+    target = await seed_user(
+        vsa_session, password_hasher, email="one@example.com", name="User One"
+    )
+    await seed_user(
+        vsa_session, password_hasher, email="two@example.com", name="User Two"
+    )
     handler = Handler(vsa_session, password_hasher, AppCache())
 
     result = await handler.handle(
-        Command(id=target.id, name="User One", email="two@example.com", password="Password1!")
+        Command(
+            id=target.id,
+            name="User One",
+            email="two@example.com",
+            password="Password1!",
+        )
     )
 
     assert result.is_failure
@@ -141,7 +150,9 @@ def test_update_user_request_rejects_short_name() -> None:
 
 def test_update_user_request_rejects_long_name() -> None:
     with pytest.raises(ValidationError):
-        UpdateUserRequest(name="a" * 81, email="user@example.com", password="Password1!")
+        UpdateUserRequest(
+            name="a" * 81, email="user@example.com", password="Password1!"
+        )
 
 
 def test_update_user_request_rejects_invalid_email() -> None:

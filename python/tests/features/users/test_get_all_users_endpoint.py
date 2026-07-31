@@ -59,8 +59,12 @@ async def test_get_users_with_jwt_returns_all_users(
     vsa_session: AsyncSession,
     password_hasher: Argon2PasswordHasher,
 ) -> None:
-    admin = await seed_user(vsa_session, password_hasher, email="admin@example.com", name="Admin User")
-    await seed_user(vsa_session, password_hasher, email="other@example.com", name="Other User")
+    admin = await seed_user(
+        vsa_session, password_hasher, email="admin@example.com", name="Admin User"
+    )
+    await seed_user(
+        vsa_session, password_hasher, email="other@example.com", name="Other User"
+    )
     headers = _auth_headers(admin.id, admin.email)
 
     response = await get_all_users_client.get("/api/v1/users", headers=headers)

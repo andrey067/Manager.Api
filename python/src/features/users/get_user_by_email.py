@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
+from fastapi import Query as FastApiQuery
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,7 +84,7 @@ def _get_handler(
 
 @router.get("/by-email", response_model=None)
 async def get_user_by_email(
-    email: str = Query(...),
+    email: str = FastApiQuery(...),
     _: int = Depends(get_current_subject),
     handler: Handler = Depends(_get_handler),
 ) -> GetUserByEmailResponse | object:

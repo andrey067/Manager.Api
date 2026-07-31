@@ -81,7 +81,9 @@ async def test_handler_success_rotates_refresh_token_hash(
     assert result.value.refresh_token != refresh_token
     expected_refresh_expires = fixed_clock.utc_now() + timedelta(days=7)
 
-    assert result.value.access_token_expires == fixed_clock.utc_now() + timedelta(hours=1)
+    assert result.value.access_token_expires == fixed_clock.utc_now() + timedelta(
+        hours=1
+    )
     assert result.value.refresh_token_expires == expected_refresh_expires
 
     row = (
